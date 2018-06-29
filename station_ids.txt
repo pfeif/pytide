@@ -1,0 +1,14 @@
+# This document serves as the list of NOAA stations for which tidal
+# information will be gathered and displayed. Please list only one
+# station per line. Each line should start with the station ID number
+# followed by a space and then by the station description. See examples
+# below as a guide. Any line beginning with a # will be treated as a
+# comment and will be ignored by the program.
+
+8726364 Mullet Key (Fort De Soto)
+8726486 Gulfport Boca Ciega Bay (Williams Pier)
+8726639 Ballast Point
+8726724 Clearwater Beach (Pier 60)
+8726738 Safety Harbor
+8726761 Dunedin City Dock
+8726769 Mobbly Bayou
