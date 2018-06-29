@@ -1,0 +1,6 @@
+The point of this project is to get a high/low tide report emailed to me
+on a daily basis. Because I intended this to be only a simple script to
+handle a specific job, I did not plan it out as a project. Once it is
+working for its original purpose, I'll start to rework the entire thing
+properly. In the meantime, take it for what it's worth, and use it how
+you'd like.
