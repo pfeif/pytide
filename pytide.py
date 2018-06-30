@@ -14,10 +14,13 @@ class NOAAStation:
     '''An object that holds important NOAA tide station information like
     the station ID number, the station's name, and the low and high
     tides at the station'''
-    def __init__(self, station_id, station_name):
+    def __init__(self, station_id, station_name=None):
         self.sid = station_id
         self.sname = station_name
+        self.latitude = None
+        self.longitude = None
         self.tide_events = []
+        self.fill_metadata()
         self.fill_tides()
 
     def __str__(self):
@@ -26,6 +29,29 @@ class NOAAStation:
         for tide in self.tide_events:
             output += '\t{0}\n'.format(tide)
         return output
+
+    def request_metadata(self):
+        '''Return a dictionary containing the station's metadata'''
+        # The API used here is specifically for gathering metadata about the
+        # NOAA stations. It provides us with things like the name, latitude and
+        # longitude of the station. For more info, see below.
+        # https://tidesandcurrents.noaa.gov/mdapi/latest/
+        metadata_url = 'https://tidesandcurrents.noaa.gov/mdapi/v0.6/webapi/\
+                        stations/{0!s}.json'.format(self.sid)
+
+        # use requests to get the response and turn the json into a dict
+        return requests.get(metadata_url).json()
+
+    def fill_metadata(self):
+        '''Set the station's name (if not already present), the
+        station's latitude, and the station's longitude.'''
+        meta_dict = self.request_metadata()
+
+        # isn't json fun? dict->key->list->dict
+        if self.sname is None:
+            self.sname = meta_dict['stations'][0]['name']
+        self.latitude = meta_dict['stations'][0]['lat']
+        self.longitude = meta_dict['stations'][0]['lng']
 
     def request_data(self):
         '''Requests data from the NOAA API and returns the result in
@@ -58,7 +84,6 @@ class NOAAStation:
         # hold a string of either 'H' or 'L' indicating high or low tide. 't'
         # will hold a string with the date and time of the time formatted
         # 'YYYY-MM-DD HH:MM'.
-
         predict_dict = self.request_data()
 
         # The direct access would appear as something like:
