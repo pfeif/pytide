@@ -36,8 +36,8 @@ class NOAAStation:
         # NOAA stations. It provides us with things like the name, latitude and
         # longitude of the station. For more info, see below.
         # https://tidesandcurrents.noaa.gov/mdapi/latest/
-        metadata_url = 'https://tidesandcurrents.noaa.gov/mdapi/v0.6/webapi/\
-                        stations/{0!s}.json'.format(self.sid)
+        metadata_url = ('https://tidesandcurrents.noaa.gov/mdapi/v0.6/webapi/'
+                        'stations/{0!s}.json'.format(self.sid))
 
         # use requests to get the response and turn the json into a dict
         return requests.get(metadata_url).json()
