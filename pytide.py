@@ -24,10 +24,12 @@ class NOAAStation:
         self.fill_tides()
 
     def __str__(self):
-        output = ''
-        output += '{0} - {1}\n'.format(self.sid, self.sname)
+        output = ('ID# {0}: {1} ({2}, {3})'.format(
+            self.sid, self.sname, self.latitude, self.longitude))
         for tide in self.tide_events:
-            output += '\t{0}\n'.format(tide)
+            output += '\n\t{0}'.format(tide)
+        output += '\n'
+
         return output
 
     def request_metadata(self):
