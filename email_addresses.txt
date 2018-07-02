@@ -1,0 +1,7 @@
+# This document serves as the list of email addresses to which tidal
+# information will be sent. Please list only one email address per line.
+# See examples below as a guide. Any line beginning with a # will be
+# treated as a comment and will be ignored by the program.
+
+first_recipient@example.com
+second_recepient@example.org
