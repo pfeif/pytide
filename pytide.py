@@ -5,9 +5,12 @@ the data neatly, and email all aquired data to the given email address
 daily.
 """
 
+import email
+import smtplib
 import requests
 
 STATION_ID_FILE = "./station_ids.txt"
+EMAIL_FILE = "./email_addresses.txt"
 
 
 class NOAAStation:
@@ -28,7 +31,6 @@ class NOAAStation:
             self.sid, self.sname, self.latitude, self.longitude))
         for tide in self.tide_events:
             output += '\n\t{0}'.format(tide)
-        output += '\n'
 
         return output
 
@@ -105,18 +107,25 @@ class NOAAStation:
 
 def main():
     """Driver function for program."""
-    station_dict = org_input()
+    # gather the station IDs from the user's file
+    station_dict = read_station_file()
+
+    # create station objects for them, and put them in a list
     station_list = []
     for station in station_dict:
         sid = station
         sname = station_dict[station]
         station_list.append(NOAAStation(sid, sname))
 
+    # read the email addresses from the user's file, and put them in a set
+    email_set = read_email_addresses()
+
     for station in station_list:
         print(station)
+        print()
 
 
-def org_input():
+def read_station_file():
     """Create a dictionary of NOAA stations for the given station ID
     file. The keys will be the station numbers, and the values will be
     the station name. Both pieces of information come directly from the
@@ -139,8 +148,22 @@ def org_input():
     station_file.close()
     return stations
 
-# def email_data():
-#     pass
+
+def read_email_addresses():
+    '''Return a set of email addresses based on the user's text file.'''
+    # the set won't allow duplicate email addresses
+    email_set = set()
+    email_file = open(EMAIL_FILE)
+
+    # check each line in the email file
+    for line in email_file:
+        if not line.startswith('#') and not line.isspace():
+            email_set.add(line)
+
+    # clean up after ourselves
+    email_file.close()
+
+    return email_set
 
 
 if __name__ == '__main__':
