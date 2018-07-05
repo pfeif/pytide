@@ -24,8 +24,6 @@ class TideStation:
         self.longitude = None
         self.tide_events = []
         self._fill_empty_data()
-        # self._fill_metadata()
-        # self._fill_tides()
 
     def __str__(self):
         string_output = ('ID# {0}: {1} ({2}, {3})'.format(
@@ -43,13 +41,12 @@ class TideStation:
         metadata_url = ('https://tidesandcurrents.noaa.gov/mdapi/v0.6/webapi/'
                         'stations/{0!s}.json'.format(self.id))
 
-        # use requests to get the response and return a dict from the json
+        # Use requests to get a response and return a dictionary from the JSON.
         response = requests.get(metadata_url)
         return response.json()
 
-    def _request_prediction(self):
-        '''Requests data from the NOAA API and returns the result in
-        JSON format.'''
+    def _request_predictions(self):
+        '''Return a dictionary containing the station's prediction data.'''
         # The API used here is for gathering tide predictions from the NOAA
         # station. It'll give us the times and levels of the high / low tides.
         # This API requires the following fields. I've split them for the sake
@@ -67,7 +64,7 @@ class TideStation:
                       'application=PyTide']
         full_url = base_url + '&'.join(parameters)
 
-        # use requests to get the response and return a dict from the json
+        # Use requests to get a response and return a dictionary from the JSON.
         response = requests.get(full_url)
         return response.json()
 
@@ -78,8 +75,8 @@ class TideStation:
         # dictionary containing station's name, latitude, and longitude
         meta_dict = self._request_metadata()
 
-        # dictionary containing station's tide level, tide type, and time.
-        predict_dict = self._request_prediction()
+        # dictionary containing station's tide change, tide type, and time
+        predict_dict = self._request_predictions()
 
         # Start filling in the metadata.
         if self.name is None:
@@ -91,7 +88,7 @@ class TideStation:
 
         # Start filling in the prediction data. The direct access would appear
         # as something along the lines of:
-        #   predict_dict['predictions'][0]['type']
+        #   predict_dict['predictions'][0]['type'],
         # where the 0th list entry is the first tide event, 1st would be
         # second, and so forth.
         for event in predict_dict['predictions']:
@@ -110,18 +107,19 @@ class TideStation:
 
 def main():
     """Driver function for program."""
-    # gather the station IDs from the user's file
+    # Gather the station IDs from the user's file.
     station_dict = read_station_file()
 
-    # create station objects for them, and put them in a list
+    # Gather the recepient email addresses from the user's file, and put them
+    # in a set.
+    email_set = read_email_addresses()
+
+    # Create a TideStation object for each ID, and add it to the list.
     station_list = []
     for key in station_dict:
         station_id = key
         station_name = station_dict[key]
         station_list.append(TideStation(station_id, station_name))
-
-    # read the email addresses from the user's file, and put them in a set
-    email_set = read_email_addresses()
 
     for key in station_list:
         print(key)
@@ -129,43 +127,43 @@ def main():
 
 
 def read_station_file():
-    """Create a dictionary of NOAA stations for the given station ID
+    """Create a dictionary of TideStations for the given station ID
     file. The keys will be the station numbers, and the values will be
     the station name. Both pieces of information come directly from the
     user's text file."""
     station_dict = dict()
     station_file = open(STATION_ID_FILE)
 
-    # check each line in the user's text file
+    # Check each line in the user's file.
     for line in station_file:
-        # exclude comments and blank lines
+        # Exclude comments and blank lines.
         if not line.startswith('#') and not line.isspace():
-            # station IDs are 7 digits
+            # Station IDs are 7 digits.
             station_id = line[:7]
-            # that leaves the rest as a descriptor
+            # That leaves the rest as a descriptor.
             station_name = line.rstrip()[8:]
-            # create / update the dictionary entry
+            # Create or update the dictionary entry.
             station_dict[station_id] = station_name
 
-    # tidy up
+    # Tidy up.
     station_file.close()
     return station_dict
 
 
 def read_email_addresses():
     '''Return a set of email addresses based on the user's text file.'''
-    # the set won't allow duplicate email addresses
+    # Sets won't allow duplicate email addresses.
     email_set = set()
     email_file = open(EMAIL_FILE)
 
-    # check each line in the email file
+    # Check each line in the email file.
     for line in email_file:
-        # exclude comments and blank lines
+        # Exclude comments and blank lines.
         if not line.startswith('#') and not line.isspace():
-            # add the address to the set
+            # Add the address to the set.
             email_set.add(line)
 
-    # clean up after ourselves
+    # Clean up after ourselves.
     email_file.close()
 
     return email_set
