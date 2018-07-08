@@ -214,11 +214,8 @@ def send_email(email, email_addresses):
     smtp_connection.login(user=SMTP_USER, password=SMTP_PASS)
 
     # One copy of the email per recipient.
-    print(email_addresses)
     for address in email_addresses:
-        print(address)
         email['To'] = address
-        print(email)
         # method for calling SMTP.sendmail() with a Message object
         smtp_connection.send_message(email)
 
