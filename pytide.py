@@ -1,16 +1,25 @@
-"""
+'''
 PyTide - A program that will parse a file containing NOAA station IDs,
 request tide data from NOAA for each station, parse the data, format
 the data neatly, and email all aquired data to the given email address
 daily.
-"""
+'''
 
-import email
+# Poor documentation for email.mime can be found below:
+#   https://docs.python.org/3.5/library/email.mime.html
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 import smtplib
 import requests
 
-STATION_ID_FILE = "./station_ids.txt"
-EMAIL_FILE = "./email_addresses.txt"
+STATION_ID_FILE = './station_ids.txt'
+EMAIL_FILE = './email_addresses.txt'
+EMAIL_SENDER = 'sender@example.com'     # Replace with sender email.
+SMTP_HOST = 'smtp.example.com'          # Replace with sender host.
+SMTP_PORT = 587                         # Standard TLS port.
+SMTP_USER = 'sender@example.co'         # Replace with sender user name.
+SMTP_PASS = 'password'                  # Replace with senser password.
 
 
 class TideStation:
@@ -106,7 +115,7 @@ class TideStation:
 
 
 def main():
-    """Driver function for program."""
+    '''Driver function for program.'''
     # Gather the station IDs from the user's file.
     station_dict = read_station_file()
 
@@ -121,16 +130,15 @@ def main():
         station_name = station_dict[key]
         station_list.append(TideStation(station_id, station_name))
 
-    for key in station_list:
-        print(key)
-        print()
+    email = compose_email(station_list)
+    send_email(email, email_set)
 
 
 def read_station_file():
-    """Create a dictionary of TideStations for the given station ID
+    '''Create a dictionary of TideStations for the given station ID
     file. The keys will be the station numbers, and the values will be
     the station name. Both pieces of information come directly from the
-    user's text file."""
+    user's text file.'''
     station_dict = dict()
     station_file = open(STATION_ID_FILE)
 
@@ -160,14 +168,62 @@ def read_email_addresses():
     for line in email_file:
         # Exclude comments and blank lines.
         if not line.startswith('#') and not line.isspace():
-            # Add the address to the set.
-            email_set.add(line)
+            # Add the address (with newline stripped) to the set.
+            email_set.add(line.strip())
 
     # Clean up after ourselves.
     email_file.close()
 
     return email_set
 
+
+def compose_email(station_list):
+    '''Return a MIMEMultipart object that includes a message body,
+    subject line, and from address. The 'To' field is None and needs to
+    be set.'''
+    # "Multipurpose Internet Mail Extensions is an internet standard that
+    # extends the format of email..." There are multiple parts to it.
+    # See below:
+    #   https://en.wikipedia.org/wiki/MIME
+    message = MIMEMultipart()
+
+    # We will NOT set message['To'] here. If we do, it'll leave an extra blank
+    # To field and throw an error when we try to send.
+    message['From'] = EMAIL_SENDER
+    message['Subject'] = 'Your PyTide customized tide report'
+
+    body_text = ''
+    for station in station_list:
+        body_text += '{0}\n\n'.format(str(station))
+
+    # Strings are great, but we want a MIMEText object for our body.
+    message_body = MIMEText(body_text)
+    message.attach(message_body)
+
+    # Our email is as complete as it's getting here. Return our work.
+    return message
+
+
+def send_email(email, email_addresses):
+    '''Send the given email to each of the addresses in
+    email_addresses.'''
+    # Create an SMTP connection.
+    smtp_connection = smtplib.SMTP(host=SMTP_HOST, port=SMTP_PORT)
+    # Enter TLS mode. Everything from here, on is encrypted.
+    smtp_connection.starttls()
+    smtp_connection.login(user=SMTP_USER, password=SMTP_PASS)
+
+    # One copy of the email per recipient.
+    print(email_addresses)
+    for address in email_addresses:
+        print(address)
+        email['To'] = address
+        print(email)
+        # method for calling SMTP.sendmail() with a Message object
+        smtp_connection.send_message(email)
+
+    # Terminate the SMTP session and close the connection.
+    smtp_connection.quit()
 
 if __name__ == '__main__':
     main()
