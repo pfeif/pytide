@@ -121,7 +121,7 @@ def main():
 
     # Gather the recepient email addresses from the user's file, and put them
     # in a set.
-    email_set = read_email_addresses()
+    email_set = read_email_file()
 
     # Create a TideStation object for each ID, and add it to the list.
     station_list = []
@@ -130,8 +130,8 @@ def main():
         station_name = station_dict[key]
         station_list.append(TideStation(station_id, station_name))
 
-    email = compose_email(station_list)
-    send_email(email, email_set)
+    # Bring it all together - compose and send those emails.
+    email_tides(station_list, email_set)
 
 
 def read_station_file():
@@ -158,7 +158,7 @@ def read_station_file():
     return station_dict
 
 
-def read_email_addresses():
+def read_email_file():
     '''Return a set of email addresses based on the user's text file.'''
     # Sets won't allow duplicate email addresses.
     email_set = set()
@@ -177,10 +177,10 @@ def read_email_addresses():
     return email_set
 
 
-def compose_email(station_list):
-    '''Return a MIMEMultipart object that includes a message body,
-    subject line, and from address. The 'To' field is None and needs to
-    be set.'''
+def email_tides(station_list, email_addresses):
+    '''Create an email containing station data from each of the stations
+    in the given station_list. Send that email to each address in the
+    email_addresses set.'''
     # "Multipurpose Internet Mail Extensions is an internet standard that
     # extends the format of email..." There are multiple parts to it.
     # See below:
@@ -188,10 +188,11 @@ def compose_email(station_list):
     message = MIMEMultipart()
 
     # We will NOT set message['To'] here. If we do, it'll leave an extra blank
-    # To field and throw an error when we try to send.
+    # 'To' field and throw an error when we try to send.
     message['From'] = EMAIL_SENDER
     message['Subject'] = 'Your PyTide customized tide report'
 
+    # Craft the message body.
     body_text = ''
     for station in station_list:
         body_text += '{0}\n\n'.format(str(station))
@@ -200,24 +201,17 @@ def compose_email(station_list):
     message_body = MIMEText(body_text)
     message.attach(message_body)
 
-    # Our email is as complete as it's getting here. Return our work.
-    return message
-
-
-def send_email(email, email_addresses):
-    '''Send the given email to each of the addresses in
-    email_addresses.'''
     # Create an SMTP connection.
     smtp_connection = smtplib.SMTP(host=SMTP_HOST, port=SMTP_PORT)
     # Enter TLS mode. Everything from here, on is encrypted.
     smtp_connection.starttls()
     smtp_connection.login(user=SMTP_USER, password=SMTP_PASS)
 
-    # One copy of the email per recipient.
+    # One copy of the message per recipient.
     for address in email_addresses:
-        email['To'] = address
+        message['To'] = address
         # method for calling SMTP.sendmail() with a Message object
-        smtp_connection.send_message(email)
+        smtp_connection.send_message(message)
 
     # Terminate the SMTP session and close the connection.
     smtp_connection.quit()
