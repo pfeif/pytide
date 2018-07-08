@@ -181,35 +181,36 @@ def email_tides(station_list, email_addresses):
     '''Create an email containing station data from each of the stations
     in the given station_list. Send that email to each address in the
     email_addresses set.'''
-    # "Multipurpose Internet Mail Extensions is an internet standard that
-    # extends the format of email..." There are multiple parts to it.
-    # See below:
-    #   https://en.wikipedia.org/wiki/MIME
-    message = MIMEMultipart()
-
-    # We will NOT set message['To'] here. If we do, it'll leave an extra blank
-    # 'To' field and throw an error when we try to send.
-    message['From'] = EMAIL_SENDER
-    message['Subject'] = 'Your PyTide customized tide report'
-
-    # Craft the message body.
-    body_text = ''
-    for station in station_list:
-        body_text += '{0}\n\n'.format(str(station))
-
-    # Strings are great, but we want a MIMEText object for our body.
-    message_body = MIMEText(body_text)
-    message.attach(message_body)
-
     # Create an SMTP connection.
     smtp_connection = smtplib.SMTP(host=SMTP_HOST, port=SMTP_PORT)
     # Enter TLS mode. Everything from here, on is encrypted.
     smtp_connection.starttls()
     smtp_connection.login(user=SMTP_USER, password=SMTP_PASS)
 
-    # One copy of the message per recipient.
+    # Craft a single message body string for use in all of the messages.
+    body_text = ''
+    for station in station_list:
+        body_text += '{0}\n\n'.format(str(station))
+
+    # We're going to create one message for each recipient because it doesn't
+    # seem to be possible change the 'To' field for each message. After I
+    # dissect the MIMEMultipart module to figure out what makes it tick, I may
+    # rewrite this entire function. For now, working code beats broken code.
     for address in email_addresses:
+        # "Multipurpose Internet Mail Extensions is an internet standard that
+        # extends the format of email..." There are multiple parts to it.
+        # See below:
+        #   https://en.wikipedia.org/wiki/MIME
+        message = MIMEMultipart()
+
+        message['From'] = EMAIL_SENDER
         message['To'] = address
+        message['Subject'] = 'Your PyTide customized tide report'
+
+        # Strings are great, but we want a MIMEText object for our body.
+        message_body = MIMEText(body_text)
+        message.attach(message_body)
+
         # method for calling SMTP.sendmail() with a Message object
         smtp_connection.send_message(message)
 
