@@ -19,7 +19,7 @@ EMAIL_SENDER = 'sender@example.com'     # Replace with sender email.
 SMTP_HOST = 'smtp.example.com'          # Replace with sender host.
 SMTP_PORT = 587                         # Standard TLS port.
 SMTP_USER = 'sender@example.co'         # Replace with sender user name.
-SMTP_PASS = 'password'                  # Replace with senser password.
+SMTP_PASS = 'password'                  # Replace with sender password.
 
 
 class TideStation:
