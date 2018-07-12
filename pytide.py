@@ -34,7 +34,7 @@ class TideStation:
     the station ID number, the station's name, and the low and high
     tides at the station'''
     def __init__(self, station_id, station_name=None):
-        self.id = station_id
+        self.id_ = station_id
         self.name = station_name
         self.latitude = None
         self.longitude = None
@@ -43,7 +43,7 @@ class TideStation:
 
     def __str__(self):
         string_output = ('ID# {0}: {1} ({2}, {3})'.format(
-            self.id, self.name, self.latitude, self.longitude))
+            self.id_, self.name, self.latitude, self.longitude))
         for tide in self.tide_events:
             string_output += '\n\t{0}'.format(tide)
         return string_output
@@ -55,7 +55,7 @@ class TideStation:
         # longitude of the station. For more info, see below.
         # https://tidesandcurrents.noaa.gov/mdapi/latest/
         metadata_url = ('https://tidesandcurrents.noaa.gov/mdapi/v0.6/webapi/'
-                        'stations/{0!s}.json'.format(self.id))
+                        'stations/{0!s}.json'.format(self.id_))
 
         # Use requests to get a response and return a dictionary from the JSON.
         response = requests.get(metadata_url)
@@ -69,7 +69,7 @@ class TideStation:
         # of convenient editing later. See below for further explanation:
         # https://tidesandcurrents.noaa.gov/api/
         base_url = 'https://tidesandcurrents.noaa.gov/api/datagetter?'
-        parameters = ['station={0!s}'.format(self.id),
+        parameters = ['station={0!s}'.format(self.id_),
                       'date=today',
                       'product=predictions',
                       'datum=MLLW',
