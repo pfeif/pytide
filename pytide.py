@@ -10,11 +10,18 @@ daily.
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+# Using os.path for cross-platflorm file access
+import os
+
 import smtplib
 import requests
 
-STATION_ID_FILE = './station_ids.txt'
-EMAIL_FILE = './email_addresses.txt'
+# These are the file names that the program will go to for the station IDs and
+# the email addresses. They are assumed to be in the same directory as this
+# file.
+STATION_ID_FILE = 'station_ids.txt'
+EMAIL_FILE = 'email_addresses.txt'
+
 EMAIL_SENDER = 'sender@example.com'     # Replace with sender email.
 SMTP_HOST = 'smtp.example.com'          # Replace with sender host.
 SMTP_PORT = 587                         # Standard TLS port.
@@ -114,14 +121,18 @@ class TideStation:
             self.tide_events.append(tide_string)
 
 
-def main():
+def main(station_filename=STATION_ID_FILE, email_filename=EMAIL_FILE):
     '''Driver function for program.'''
+    # Gather the file paths for the user's input.
+    station_path = os.path.abspath(station_filename)
+    email_path = os.path.abspath(email_filename)
+
     # Gather the station IDs from the user's file.
-    station_dict = read_station_file()
+    station_dict = read_station_file(station_path)
 
     # Gather the recepient email addresses from the user's file, and put them
     # in a set.
-    email_set = read_email_file()
+    email_set = read_email_file(email_path)
 
     # Create a TideStation object for each ID, and add it to the list.
     station_list = []
@@ -134,13 +145,13 @@ def main():
     email_tides(station_list, email_set)
 
 
-def read_station_file():
+def read_station_file(station_path):
     '''Create a dictionary of TideStations for the given station ID
     file. The keys will be the station numbers, and the values will be
     the station name. Both pieces of information come directly from the
     user's text file.'''
     station_dict = dict()
-    station_file = open(STATION_ID_FILE)
+    station_file = open(station_path)
 
     # Check each line in the user's file.
     for line in station_file:
@@ -158,11 +169,11 @@ def read_station_file():
     return station_dict
 
 
-def read_email_file():
+def read_email_file(email_path):
     '''Return a set of email addresses based on the user's text file.'''
     # Sets won't allow duplicate email addresses.
     email_set = set()
-    email_file = open(EMAIL_FILE)
+    email_file = open(email_path)
 
     # Check each line in the email file.
     for line in email_file:
