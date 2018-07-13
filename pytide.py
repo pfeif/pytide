@@ -10,10 +10,9 @@ daily.
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-# Using os.path for cross-platflorm file access
-import os
-
+import os           # os.path for cross-platform compatibility
 import smtplib
+import sys
 import requests
 
 # These are the file names that the program will go to for the station IDs and
@@ -121,11 +120,21 @@ class TideStation:
             self.tide_events.append(tide_string)
 
 
-def main(station_filename=STATION_ID_FILE, email_filename=EMAIL_FILE):
-    '''Driver function for program.'''
-    # Gather the file paths for the user's input.
-    station_path = os.path.abspath(station_filename)
-    email_path = os.path.abspath(email_filename)
+def main(argv):
+    '''Driver function for program.
+
+    Can be called with or without command line arguments. If using
+    command line arguments, both a station id file and an email address
+    file must be included. Without those arguments, the program defaults
+    to using station_ids.txt and email_addresses.txt for its input.
+    '''
+    station_path = os.path.abspath(STATION_ID_FILE)
+    email_path = os.path.abspath(EMAIL_FILE)
+
+    # Set file paths based on optional user input.
+    if argv:
+        station_path = os.path.abspath(argv[0])
+        email_path = os.path.abspath(argv[1])
 
     # Gather the station IDs from the user's file.
     station_dict = read_station_file(station_path)
@@ -229,4 +238,4 @@ def email_tides(station_list, email_addresses):
     smtp_connection.quit()
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
