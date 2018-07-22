@@ -11,9 +11,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import os           # os.path for cross-platform compatibility
-import smtplib
-import sys
-import requests
+import smtplib      # smtplib.SMTP for email server connections
+import sys          # sys.argv for command line arguments
+import requests     # requests for API calls and JSON decoding
 
 # These are the file names that the program will go to for the station IDs and
 # the email addresses. They are assumed to be in the same directory as this
@@ -24,7 +24,7 @@ EMAIL_FILE = 'email_addresses.txt'
 EMAIL_SENDER = 'sender@example.com'     # Replace with sender email.
 SMTP_HOST = 'smtp.example.com'          # Replace with sender host.
 SMTP_PORT = 587                         # Standard TLS port.
-SMTP_USER = 'sender@example.co'         # Replace with sender user name.
+SMTP_USER = 'sender@example.com'        # Replace with sender user name.
 SMTP_PASS = 'password'                  # Replace with sender password.
 
 
@@ -152,6 +152,7 @@ def main(argv):
 
     # Bring it all together - compose and send those emails.
     email_tides(station_list, email_set)
+    # print(gen_html_body(station_list))
 
 
 def read_station_file(station_path):
@@ -197,6 +198,34 @@ def read_email_file(email_path):
     return email_set
 
 
+def gen_html_body(station_list):
+    '''Create an HTML message body for attachment to an email.'''
+    # I'm sure there are a lot of options here, but this one is pretty straight
+    # forward. Start building the HTML for the body and add as we go along.
+    # See below for a quick reference from Python about the matter.
+    #   https://docs.python.org/3.5/library/email-examples.html
+    html = '<html><head></head><body>'
+    for station in station_list:
+        # The Google Maps url string for searching by coordinates is:
+        #   https://www.google.com/maps/search/?api=1&query={lat},{long}
+        maps_url = ('https://www.google.com/maps/search/?api=1&query={0},{1}'
+                    .format(station.latitude, station.longitude))
+
+        html += ('<p>ID# {0}: {1} <a href="{2}">({3}, {4})</a><br>'
+                 .format(station.id_, station.name, maps_url, station.latitude,
+                         station.longitude))
+
+        for tide in station.tide_events:
+            html += '&nbsp;&nbsp;&nbsp;&nbsp;{0}<br>'.format(tide)
+
+        html += '<br></p>'
+
+    # Finish off by closing the tags.
+    html += '</body></html>'
+
+    return html
+
+
 def email_tides(station_list, email_addresses):
     '''Create an email containing station data from each of the stations
     in the given station_list. Send that email to each address in the
@@ -207,10 +236,8 @@ def email_tides(station_list, email_addresses):
     smtp_connection.starttls()
     smtp_connection.login(user=SMTP_USER, password=SMTP_PASS)
 
-    # Craft a single message body string for use in all of the messages.
-    body_text = ''
-    for station in station_list:
-        body_text += '{0}\n\n'.format(str(station))
+    # Craft a single HTML message body for use in all of the messages.
+    body_html = gen_html_body(station_list)
 
     # We're going to create one message for each recipient because it doesn't
     # seem to be possible change the 'To' field for each message. After I
@@ -225,11 +252,11 @@ def email_tides(station_list, email_addresses):
 
         message['From'] = EMAIL_SENDER
         message['To'] = address
-        message['Subject'] = 'Your PyTide customized tide report'
+        message['Subject'] = 'Your customized PyTide report'
 
-        # Strings are great, but we want a MIMEText object for our body.
-        message_body = MIMEText(body_text)
-        message.attach(message_body)
+        # HTML is swell, but we want a MIMEText object for our message body.
+        message_html = MIMEText(body_html, 'html')
+        message.attach(message_html)
 
         # method for calling SMTP.sendmail() with a Message object
         smtp_connection.send_message(message)
@@ -238,4 +265,5 @@ def email_tides(station_list, email_addresses):
     smtp_connection.quit()
 
 if __name__ == '__main__':
+    # Leave "python pytide.py" behind. We know that much already.
     main(sys.argv[1:])
