@@ -151,10 +151,7 @@ def main(argv):
         station_list.append(TideStation(station_id, station_name))
 
     # Bring it all together - compose and send those emails.
-    # email_tides(station_list, email_set)
-
-    for station in station_list:
-        print(station)
+    email_tides(station_list, email_set)
 
 
 def read_station_file(station_path):
