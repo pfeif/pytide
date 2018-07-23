@@ -5,6 +5,9 @@ the data neatly, and email all aquired data to the given email address
 daily.
 '''
 
+# OrderedDict allows the program to maintain user's order
+from collections import OrderedDict
+
 # Poor documentation for email.mime can be found below:
 #   https://docs.python.org/3.5/library/email.mime.html
 from email.mime.multipart import MIMEMultipart
@@ -151,7 +154,10 @@ def main(argv):
         station_list.append(TideStation(station_id, station_name))
 
     # Bring it all together - compose and send those emails.
-    email_tides(station_list, email_set)
+    # email_tides(station_list, email_set)
+
+    for station in station_list:
+        print(station)
 
 
 def read_station_file(station_path):
@@ -159,7 +165,7 @@ def read_station_file(station_path):
     file. The keys will be the station numbers, and the values will be
     the station name. Both pieces of information come directly from the
     user's text file.'''
-    station_dict = dict()
+    station_dict = OrderedDict()
     station_file = open(station_path)
 
     # Check each line in the user's file.
