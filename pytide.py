@@ -94,7 +94,7 @@ class TideStation:
         predict_dict = self._request_predictions()
 
         # Start filling in the metadata.
-        if self.name is None:
+        if not self.name:
             # A human-readable description is useful to have.
             self.name = meta_dict['stations'][0]['name']
         # Knowing the location could be pretty useful too.
@@ -151,8 +151,10 @@ def main(argv):
         station_list.append(TideStation(station_id, station_name))
 
     # Bring it all together - compose and send those emails.
-    email_tides(station_list, email_set)
-    # print(gen_html_body(station_list))
+    # email_tides(station_list, email_set)
+
+    for station in station_list:
+        print(station)
 
 
 def read_station_file(station_path):
@@ -170,6 +172,8 @@ def read_station_file(station_path):
             # Station IDs are 7 digits.
             station_id = line[:7]
             # That leaves the rest as a descriptor.
+            # Note: If there is no user-defined descriptor, station_name will
+            #   remain an empty string.
             station_name = line.rstrip()[8:]
             # Create or update the dictionary entry.
             station_dict[station_id] = station_name
