@@ -5,7 +5,7 @@ the data neatly, and email all aquired data to the given email address
 daily.
 '''
 
-# OrderedDict allows the program to maintain user's order
+# OrderedDict allows the program to maintain user's input order.
 from collections import OrderedDict
 
 # Poor documentation for email.mime can be found below:
@@ -55,7 +55,7 @@ class TideStation:
         # The API used here is specifically for gathering metadata about the
         # NOAA stations. It provides us with things like the name, latitude and
         # longitude of the station. For more info, see below.
-        # https://tidesandcurrents.noaa.gov/mdapi/latest/
+        #   https://tidesandcurrents.noaa.gov/mdapi/latest/
         metadata_url = ('https://tidesandcurrents.noaa.gov/mdapi/v0.6/webapi/'
                         'stations/{0!s}.json'.format(self.id_))
 
@@ -69,7 +69,7 @@ class TideStation:
         # station. It'll give us the times and levels of the high / low tides.
         # This API requires the following fields. I've split them for the sake
         # of convenient editing later. See below for further explanation:
-        # https://tidesandcurrents.noaa.gov/api/
+        #   https://tidesandcurrents.noaa.gov/api/
         base_url = 'https://tidesandcurrents.noaa.gov/api/datagetter?'
         parameters = ['station={0!s}'.format(self.id_),
                       'date=today',
@@ -154,10 +154,7 @@ def main(argv):
         station_list.append(TideStation(station_id, station_name))
 
     # Bring it all together - compose and send those emails.
-    # email_tides(station_list, email_set)
-
-    for station in station_list:
-        print(station)
+    email_tides(station_list, email_set)
 
 
 def read_station_file(station_path):
