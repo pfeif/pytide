@@ -13,22 +13,18 @@ from collections import OrderedDict
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+# Python's built-in configuration file parser. See below for more information:
+#   https://docs.python.org/3/library/configparser.html
+from configparser import ConfigParser
+
 import os           # os.path for cross-platform compatibility
 import smtplib      # smtplib.SMTP for email server connections
 import sys          # sys.argv for command line arguments
 import requests     # requests for API calls and JSON decoding
 
-# These are the file names that the program will go to for the station IDs and
-# the email addresses. They are assumed to be in the same directory as this
-# file.
-STATION_ID_FILE = 'station_ids.txt'
-EMAIL_FILE = 'email_addresses.txt'
-
-EMAIL_SENDER = 'sender@example.com'     # Replace with sender email.
-SMTP_HOST = 'smtp.example.com'          # Replace with sender host.
-SMTP_PORT = 587                         # Standard TLS port.
-SMTP_USER = 'sender@example.com'        # Replace with sender user name.
-SMTP_PASS = 'password'                  # Replace with sender password.
+# The sole configuration file is assumed to be named config.ini and is expected
+# to reside in the same directory as this program.
+CONFIG_FILE = 'config.ini'
 
 
 class TideStation:
@@ -126,25 +122,36 @@ class TideStation:
 def main(argv):
     '''Driver function for program.
 
-    Can be called with or without command line arguments. If using
-    command line arguments, both a station id file and an email address
-    file must be included. Without those arguments, the program defaults
-    to using station_ids.txt and email_addresses.txt for its input.
+    Can be called with or without a command line argument indicating a user-
+    specified configuration file.
     '''
-    station_path = os.path.abspath(STATION_ID_FILE)
-    email_path = os.path.abspath(EMAIL_FILE)
+    config_path = os.path.abspath(CONFIG_FILE)
 
-    # Set file paths based on optional user input.
+    # Set different config file path based on optional user input.
     if argv:
-        station_path = os.path.abspath(argv[0])
-        email_path = os.path.abspath(argv[1])
+        config_path = os.path.abspath(argv[0])
 
-    # Gather the station IDs from the user's file.
-    station_dict = read_station_file(station_path)
+    # It will behoove us to allow non-values for the sake of giving users the
+    # option to not include a station description.
+    config = ConfigParser(allow_no_value=True, empty_lines_in_values=False)
 
-    # Gather the recepient email addresses from the user's file, and put them
-    # in a set.
-    email_set = read_email_file(email_path)
+    # ConfigParser.read_file(file object)... With open(path) closes the
+    # file for us when we're done.
+    with open(config_path) as file:
+        config.read_file(file)
+
+    # ConfigParser.items('SECTION') returns a list of tuples with the user's
+    # entries. It goes something like this:
+    #   config.items('STATIONS') -> [('ID#A, DescripA'), ('ID#B', 'DescripB')]
+    #   config.items('RECIPIENTS') -> [(EmailA, ''), ('EmailB', '')]
+    #   config.items('SMTP SERVER') -> [('port', '587'), ('etc', 'etc')]
+    station_dict = OrderedDict(config.items('STATIONS'))
+
+    email_set = set()
+    for tuple_ in config.items('RECIPIENTS'):
+        email_set.add(tuple_[0])
+
+    smtp_dict = dict(config.items('SMTP SERVER'))
 
     # Create a TideStation object for each ID, and add it to the list.
     station_list = []
@@ -154,52 +161,7 @@ def main(argv):
         station_list.append(TideStation(station_id, station_name))
 
     # Bring it all together - compose and send those emails.
-    email_tides(station_list, email_set)
-
-
-def read_station_file(station_path):
-    '''Create a dictionary of TideStations for the given station ID
-    file. The keys will be the station numbers, and the values will be
-    the station name. Both pieces of information come directly from the
-    user's text file.'''
-    station_dict = OrderedDict()
-    station_file = open(station_path)
-
-    # Check each line in the user's file.
-    for line in station_file:
-        # Exclude comments and blank lines.
-        if not line.startswith('#') and not line.isspace():
-            # Station IDs are 7 digits.
-            station_id = line[:7]
-            # That leaves the rest as a descriptor.
-            # Note: If there is no user-defined descriptor, station_name will
-            #   remain an empty string.
-            station_name = line.rstrip()[8:]
-            # Create or update the dictionary entry.
-            station_dict[station_id] = station_name
-
-    # Tidy up.
-    station_file.close()
-    return station_dict
-
-
-def read_email_file(email_path):
-    '''Return a set of email addresses based on the user's text file.'''
-    # Sets won't allow duplicate email addresses.
-    email_set = set()
-    email_file = open(email_path)
-
-    # Check each line in the email file.
-    for line in email_file:
-        # Exclude comments and blank lines.
-        if not line.startswith('#') and not line.isspace():
-            # Add the address (with newline stripped) to the set.
-            email_set.add(line.strip())
-
-    # Clean up after ourselves.
-    email_file.close()
-
-    return email_set
+    email_tides(station_list, email_set, smtp_dict)
 
 
 def gen_html_body(station_list):
@@ -230,15 +192,21 @@ def gen_html_body(station_list):
     return html
 
 
-def email_tides(station_list, email_addresses):
+def email_tides(station_list, email_set, smtp_dict):
     '''Create an email containing station data from each of the stations
     in the given station_list. Send that email to each address in the
-    email_addresses set.'''
+    email_set.'''
+    sender = smtp_dict['sender']
+    host = smtp_dict['host']
+    port = int(smtp_dict['port'])
+    user = smtp_dict['user']
+    password = smtp_dict['password']
+
     # Create an SMTP connection.
-    smtp_connection = smtplib.SMTP(host=SMTP_HOST, port=SMTP_PORT)
+    smtp_connection = smtplib.SMTP(host=host, port=port)
     # Enter TLS mode. Everything from here, on is encrypted.
     smtp_connection.starttls()
-    smtp_connection.login(user=SMTP_USER, password=SMTP_PASS)
+    smtp_connection.login(user=user, password=password)
 
     # Craft a single HTML message body for use in all of the messages.
     body_html = gen_html_body(station_list)
@@ -247,14 +215,14 @@ def email_tides(station_list, email_addresses):
     # seem to be possible change the 'To' field for each message. After I
     # dissect the MIMEMultipart module to figure out what makes it tick, I may
     # rewrite this entire function. For now, working code beats broken code.
-    for address in email_addresses:
+    for address in email_set:
         # "Multipurpose Internet Mail Extensions is an internet standard that
         # extends the format of email..." There are multiple parts to it.
         # See below:
         #   https://en.wikipedia.org/wiki/MIME
         message = MIMEMultipart()
 
-        message['From'] = EMAIL_SENDER
+        message['From'] = sender
         message['To'] = address
         message['Subject'] = 'Your customized PyTide report'
 
@@ -267,6 +235,7 @@ def email_tides(station_list, email_addresses):
 
     # Terminate the SMTP session and close the connection.
     smtp_connection.quit()
+
 
 if __name__ == '__main__':
     # Leave "python pytide.py" behind. We know that much already.
