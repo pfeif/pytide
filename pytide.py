@@ -1,5 +1,5 @@
 '''
-PyTide - A program that will parse a file containing NOAA station IDs,
+Pytide - A program that will parse a file containing NOAA station IDs,
 request tide data from NOAA for each station, parse the data, format
 the data neatly, and email all aquired data to the given email address
 daily.
@@ -75,7 +75,7 @@ class TideStation:
                       'time_zone=lst_ldt',
                       'format=json',
                       'interval=hilo',
-                      'application=PyTide']
+                      'application=Pytide']
         full_url = base_url + '&'.join(parameters)
 
         # Use requests to get a response and return a dictionary from the JSON.
@@ -224,7 +224,7 @@ def email_tides(station_list, email_set, smtp_dict):
 
         message['From'] = sender
         message['To'] = address
-        message['Subject'] = 'Your customized PyTide report'
+        message['Subject'] = 'Your customized Pytide report'
 
         # HTML is swell, but we want a MIMEText object for our message body.
         message_html = MIMEText(body_html, 'html')
