@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Pytide Report</title>
+</head>
+
+<body>
+    {% for station in station_list %}
+    <div>
+        <p>
+            ID# {{ station.id_ }}: {{ station.name }}
+            <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}">({{station.latitude}}, {{station.longitude}})</a>
+
+            {% for tide in station.tide_events %}
+            <br>&nbsp;&nbsp;&nbsp;&nbsp;{{ tide }}
+            {% endfor %}
+        </p>
+    </div>
+    {% endfor %}
+</body>
+
+</html>
