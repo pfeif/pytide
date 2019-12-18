@@ -1,21 +1,25 @@
-'''
+"""
 Pytide - A program that will parse a file containing NOAA station IDs,
 request tide data from NOAA for each station, parse the data, format
 the data neatly, and email all aquired data to the given email address
 daily.
-'''
+"""
 
 # OrderedDict allows the program to maintain user's input order.
 from collections import OrderedDict
+
+# Python's built-in configuration file parser. See below for more information:
+#   https://docs.python.org/3/library/configparser.html
+from configparser import ConfigParser
 
 # Poor documentation for email.mime can be found below:
 #   https://docs.python.org/3.5/library/email.mime.html
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-# Python's built-in configuration file parser. See below for more information:
-#   https://docs.python.org/3/library/configparser.html
-from configparser import ConfigParser
+# Jinja2 is a templating engine. It will handle the HTML for the email body.
+#   https://palletsprojects.com/p/jinja/
+from jinja2 import Environment, PackageLoader
 
 import os           # os.path for cross-platform compatibility
 import smtplib      # smtplib.SMTP for email server connections
@@ -28,9 +32,10 @@ CONFIG_FILE = 'config.ini'
 
 
 class TideStation:
-    '''An object that holds important NOAA tide station information like
+    """An object that holds important NOAA tide station information like
     the station ID number, the station's name, and the low and high
-    tides at the station'''
+    tides at the station"""
+
     def __init__(self, station_id, station_name=None):
         self.id_ = station_id
         self.name = station_name
@@ -47,7 +52,7 @@ class TideStation:
         return string_output
 
     def _request_metadata(self):
-        '''Return a dictionary containing the station's metadata.'''
+        """Return a dictionary containing the station's metadata."""
         # The API used here is specifically for gathering metadata about the
         # NOAA stations. It provides us with things like the name, latitude and
         # longitude of the station. For more info, see below.
@@ -60,7 +65,7 @@ class TideStation:
         return response.json()
 
     def _request_predictions(self):
-        '''Return a dictionary containing the station's prediction data.'''
+        """Return a dictionary containing the station's prediction data."""
         # The API used here is for gathering tide predictions from the NOAA
         # station. It'll give us the times and levels of the high / low tides.
         # This API requires the following fields. I've split them for the sake
@@ -83,8 +88,8 @@ class TideStation:
         return response.json()
 
     def _fill_empty_data(self):
-        '''This class has a number of empty attributes. It's time to
-        fill them in.'''
+        """This class has a number of empty attributes. It's time to
+        fill them in."""
 
         # dictionary containing station's name, latitude, and longitude
         meta_dict = self._request_metadata()
@@ -120,11 +125,11 @@ class TideStation:
 
 
 def main(argv):
-    '''Driver function for program.
+    """Driver function for program.
 
     Can be called with or without a command line argument indicating a user-
     specified configuration file.
-    '''
+    """
     config_path = os.path.abspath(CONFIG_FILE)
 
     # Set different config file path based on optional user input.
@@ -164,38 +169,10 @@ def main(argv):
     email_tides(station_list, email_set, smtp_dict)
 
 
-def gen_html_body(station_list):
-    '''Create an HTML message body for attachment to an email.'''
-    # I'm sure there are a lot of options here, but this one is pretty straight
-    # forward. Start building the HTML for the body and add as we go along.
-    # See below for a quick reference from Python about the matter.
-    #   https://docs.python.org/3.5/library/email-examples.html
-    html = '<html><head></head><body>'
-    for station in station_list:
-        # The Google Maps url string for searching by coordinates is:
-        #   https://www.google.com/maps/search/?api=1&query={lat},{long}
-        maps_url = ('https://www.google.com/maps/search/?api=1&query={0},{1}'
-                    .format(station.latitude, station.longitude))
-
-        html += ('<p>ID# {0}: {1} <a href="{2}">({3}, {4})</a><br>'
-                 .format(station.id_, station.name, maps_url, station.latitude,
-                         station.longitude))
-
-        for tide in station.tide_events:
-            html += '&nbsp;&nbsp;&nbsp;&nbsp;{0}<br>'.format(tide)
-
-        html += '<br></p>'
-
-    # Finish off by closing the tags.
-    html += '</body></html>'
-
-    return html
-
-
 def email_tides(station_list, email_set, smtp_dict):
-    '''Create an email containing station data from each of the stations
+    """Create an email containing station data from each of the stations
     in the given station_list. Send that email to each address in the
-    email_set.'''
+    email_set."""
     sender = smtp_dict['sender']
     host = smtp_dict['host']
     port = int(smtp_dict['port'])
@@ -204,6 +181,7 @@ def email_tides(station_list, email_set, smtp_dict):
 
     # Create an SMTP connection.
     smtp_connection = smtplib.SMTP(host=host, port=port)
+
     # Enter TLS mode. Everything from here, on is encrypted.
     smtp_connection.starttls()
     smtp_connection.login(user=user, password=password)
@@ -235,6 +213,26 @@ def email_tides(station_list, email_set, smtp_dict):
 
     # Terminate the SMTP session and close the connection.
     smtp_connection.quit()
+
+
+def gen_html_body(station_list):
+    """Create an HTML message body for attachment to an email."""
+    # Jinja is the templating engine that will create the HTML body for the
+    # email. I chose Jinja because its used in Flask, and Flask is on my list
+    # of things to pick up.
+
+    # "The core component of Jinja is the Environment." It is used to store the
+    # configuration.
+    jinja_env = Environment(
+        loader=PackageLoader('pytide'),  # sets the package name
+        autoescape=True)                 # prevents cross-site scripting
+
+    # Asks the loader for the template and returns a Template object.
+    email_template = jinja_env.get_template('email-template.html')
+
+    # Pass the station list as an argument to the email_template for processing
+    # and rendering; then, return a unicode string with the resulting HTML.
+    return email_template.render(station_list=station_list)
 
 
 if __name__ == '__main__':
