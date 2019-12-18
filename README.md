@@ -13,20 +13,19 @@ data. The idea is to set this program to run as a scheduled task at a prefered
 interval using a system like cron or systemd. Of course, you could choose to
 run it manually too.
 
-## Prerequisites
+## Requirements
 
-- [Python 3.5 (or later)](https://www.python.org/downloads/)
-- [Requests library for Python](http://docs.python-requests.org/en/master/)
-  - type `pip install requests` into your shell
-- [Git](https://git-scm.com/downloads)
+* [Python 3.5 (or later)](https://www.python.org/downloads/)
+  * [Jinja2 library for Python](https://jinja.palletsprojects.com/en/2.10.x/)
+  * [Requests library for Python](http://docs.python-requests.org/en/master/)
+* [Git](https://git-scm.com/downloads) (optional)
 
-## Installing
+## Usage
 
- * Either
-   * [clone this repository](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository): `git clone https://github.com/pfeif/pytide.git`
-   * download and unzip this repo
- * edit `config.ini` with your favorite text editor.
- * type `python pytide.py` into your shell.
+ * Clone (or download and unzip) this repository.
+ * Install dependencies (requirements.txt provided for pip)
+ * Edit `config.ini` with your favorite text editor.
+ * Run by typing `python pytide.py` into your shell.
 
 ## License
 
