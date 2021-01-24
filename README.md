@@ -15,9 +15,9 @@ run it manually too.
 
 ## Requirements
 
-* [Python 3.5 (or later)](https://www.python.org/downloads/)
-  * [Jinja2 library for Python](https://jinja.palletsprojects.com/en/2.10.x/)
-  * [Requests library for Python](http://docs.python-requests.org/en/master/)
+* [A supported version of Python 3 (currently 3.6 or later)](https://www.python.org/downloads/)
+  * [Jinja2 library for Python](https://jinja.palletsprojects.com/en/2.11.x/)
+  * [Requests library for Python](https://2.python-requests.org/en/master/)
 * [Git](https://git-scm.com/downloads) (optional)
 
 ## Usage
