@@ -1,8 +1,7 @@
 """
 Pytide - A program that will parse a file containing NOAA station IDs,
 request tide data from NOAA for each station, parse the data, format
-the data neatly, and email all aquired data to the given email address
-daily.
+the data neatly, and email all aquired data to the given email address.
 """
 
 # OrderedDict allows the program to maintain user's input order.
@@ -13,7 +12,7 @@ from collections import OrderedDict
 from configparser import ConfigParser
 
 # Poor documentation for email.mime can be found below:
-#   https://docs.python.org/3.5/library/email.mime.html
+#   https://docs.python.org/3/library/email.mime.html
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -56,9 +55,9 @@ class TideStation:
         # The API used here is specifically for gathering metadata about the
         # NOAA stations. It provides us with things like the name, latitude and
         # longitude of the station. For more info, see below.
-        #   https://tidesandcurrents.noaa.gov/mdapi/latest/
-        metadata_url = ('https://tidesandcurrents.noaa.gov/mdapi/v0.6/webapi/'
-                        'stations/{0!s}.json'.format(self.id_))
+        #   https://api.tidesandcurrents.noaa.gov/mdapi/prod/
+        metadata_url = ('https://api.tidesandcurrents.noaa.gov/mdapi/prod/'
+                        'webapi/stations/{0!s}.json'.format(self.id_))
 
         # Use requests to get a response and return a dictionary from the JSON.
         response = requests.get(metadata_url)
@@ -70,8 +69,9 @@ class TideStation:
         # station. It'll give us the times and levels of the high / low tides.
         # This API requires the following fields. I've split them for the sake
         # of convenient editing later. See below for further explanation:
-        #   https://tidesandcurrents.noaa.gov/api/
-        base_url = 'https://tidesandcurrents.noaa.gov/api/datagetter?'
+        #   https://api.tidesandcurrents.noaa.gov/api/prod/
+        base_url = ('https://api.tidesandcurrents.noaa.gov/api/prod/'
+                    'datagetter?')
         parameters = ['station={0!s}'.format(self.id_),
                       'date=today',
                       'product=predictions',
@@ -94,9 +94,6 @@ class TideStation:
         # dictionary containing station's name, latitude, and longitude
         meta_dict = self._request_metadata()
 
-        # dictionary containing station's tide change, tide type, and time
-        predict_dict = self._request_predictions()
-
         # Start filling in the metadata.
         if not self.name:
             # A human-readable description is useful to have.
@@ -105,23 +102,31 @@ class TideStation:
         self.latitude = meta_dict['stations'][0]['lat']
         self.longitude = meta_dict['stations'][0]['lng']
 
-        # Start filling in the prediction data. The direct access would appear
-        # as something along the lines of:
-        #   predict_dict['predictions'][0]['type'],
-        # where the 0th list entry is the first tide event, 1st would be
-        # second, and so forth.
-        for event in predict_dict['predictions']:
-            tide_time = event['t']      # date/time value: 'YYYY-MM-DD HH:MM'
-            tide_level = event['v']     # water change value: '1.234'
-            tide_type = 'Low'
-            if event['type'] == 'H':    # tide type value: 'L' or 'H'
-                tide_type = 'High'
+        # dictionary containing station's tide change, tide type, and time
+        predict_dict = self._request_predictions()
 
-            tide_string = '{0} {1} ({2})'.format(tide_time, tide_type,
-                                                 tide_level)
+        # Verify prediction data is present.
+        if 'predictions' in predict_dict:
+            # Start filling in the prediction data. The direct access would
+            # appear as something along the lines of:
+            #   predict_dict['predictions'][0]['type'],
+            # where the 0th list entry is the first tide event, 1st would be
+            # second, and so forth.
+            for event in predict_dict['predictions']:
+                tide_time = event['t']    # date/time value: 'YYYY-MM-DD HH:MM'
+                tide_level = event['v']   # water change value: '1.234'
+                tide_type = 'Low'
+                if event['type'] == 'H':  # tide type value: 'L' or 'H'
+                    tide_type = 'High'
 
-            # Append this tide to the running list.
-            self.tide_events.append(tide_string)
+                tide_string = '{0} {1} ({2})'.format(tide_time, tide_type,
+                                                     tide_level)
+
+                # Append this tide to the running list.
+                self.tide_events.append(tide_string)
+        else:
+            self.tide_events.append(
+                'Error retrieving tides for station {0}.'.format(self.id_))
 
 
 def main(argv):
