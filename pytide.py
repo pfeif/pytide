@@ -1,7 +1,7 @@
 """
 Pytide - A program that will parse a file containing NOAA station IDs,
 request tide data from NOAA for each station, parse the data, format
-the data neatly, and email all aquired data to the given email address.
+the data neatly, and email all acquired data to the given email address.
 """
 
 # OrderedDict allows the program to maintain user's input order.
@@ -236,7 +236,7 @@ def gen_html_body(station_list):
     email_template = jinja_env.get_template('email-template.html')
 
     # Pass the station list as an argument to the email_template for processing
-    # and rendering; then, return a unicode string with the resulting HTML.
+    # and rendering; then, return a Unicode string with the resulting HTML.
     return email_template.render(station_list=station_list)
 
 
