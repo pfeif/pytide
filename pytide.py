@@ -44,10 +44,10 @@ class TideStation:
         self._fill_empty_data()
 
     def __str__(self):
-        string_output = ('ID# {0}: {1} ({2}, {3})'.format(
-            self.id_, self.name, self.latitude, self.longitude))
+        string_output = (f'ID# {self.id_}: {self.name} ({self.latitude}, '
+                         f'{self.longitude}')
         for tide in self.tide_events:
-            string_output += '\n\t{0}'.format(tide)
+            string_output += f'\n\t{tide}'
         return string_output
 
     def _request_metadata(self):
@@ -56,8 +56,8 @@ class TideStation:
         # NOAA stations. It provides us with things like the name, latitude and
         # longitude of the station. For more info, see below.
         #   https://api.tidesandcurrents.noaa.gov/mdapi/prod/
-        metadata_url = ('https://api.tidesandcurrents.noaa.gov/mdapi/prod/'
-                        'webapi/stations/{0!s}.json'.format(self.id_))
+        metadata_url = (f'https://api.tidesandcurrents.noaa.gov/mdapi/prod/'
+                        f'webapi/stations/{self.id_!s}.json')
 
         # Use requests to get a response and return a dictionary from the JSON.
         response = requests.get(metadata_url)
@@ -72,15 +72,15 @@ class TideStation:
         #   https://api.tidesandcurrents.noaa.gov/api/prod/
         base_url = ('https://api.tidesandcurrents.noaa.gov/api/prod/'
                     'datagetter?')
-        parameters = ['station={0!s}'.format(self.id_),
-                      'date=today',
-                      'product=predictions',
-                      'datum=MLLW',
-                      'units=english',
-                      'time_zone=lst_ldt',
-                      'format=json',
-                      'interval=hilo',
-                      'application=Pytide']
+        parameters = [f'station={self.id_!s}',
+                      f'date=today',
+                      f'product=predictions',
+                      f'datum=MLLW',
+                      f'units=english',
+                      f'time_zone=lst_ldt',
+                      f'format=json',
+                      f'interval=hilo',
+                      f'application=Pytide']
         full_url = base_url + '&'.join(parameters)
 
         # Use requests to get a response and return a dictionary from the JSON.
@@ -119,14 +119,13 @@ class TideStation:
                 if event['type'] == 'H':  # tide type value: 'L' or 'H'
                     tide_type = 'High'
 
-                tide_string = '{0} {1} ({2})'.format(tide_time, tide_type,
-                                                     tide_level)
+                tide_string = f'{tide_time} {tide_type} ({tide_level})'
 
                 # Append this tide to the running list.
                 self.tide_events.append(tide_string)
         else:
-            self.tide_events.append(
-                'Error retrieving tides for station {0}.'.format(self.id_))
+            self.tide_events.append(f'Error retrieving tides for station '
+                                    f'{self.id_}.')
 
 
 def main(argv):
