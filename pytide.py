@@ -7,21 +7,20 @@ the data neatly, and email all acquired data to the given email address.
 # OrderedDict allows the program to maintain user's input order.
 from collections import OrderedDict
 
-# Python's built-in configuration file parser. See below for more information:
-#   https://docs.python.org/3/library/configparser.html
+# Python's built-in configuration file parser.
 from configparser import ConfigParser
 
-# Poor documentation for email.mime can be found below:
-#   https://docs.python.org/3/library/email.mime.html
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+# The preferred method of representing email since 3.6.
+from email.message import EmailMessage
+
+# SMTP for email server connections
+from smtplib import SMTP
 
 # Jinja2 is a templating engine. It will handle the HTML for the email body.
 #   https://palletsprojects.com/p/jinja/
 from jinja2 import Environment, PackageLoader
 
 import os           # os.path for cross-platform compatibility
-import smtplib      # smtplib.SMTP for email server connections
 import sys          # sys.argv for command line arguments
 import requests     # requests for API calls and JSON decoding
 
@@ -70,8 +69,7 @@ class TideStation:
         # This API requires the following fields. I've split them for the sake
         # of convenient editing later. See below for further explanation:
         #   https://api.tidesandcurrents.noaa.gov/api/prod/
-        base_url = ('https://api.tidesandcurrents.noaa.gov/api/prod/'
-                    'datagetter?')
+        base_url = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?'
         parameters = [f'station={self.id_!s}',
                       f'date=today',
                       f'product=predictions',
@@ -88,9 +86,7 @@ class TideStation:
         return response.json()
 
     def _fill_empty_data(self):
-        """This class has a number of empty attributes. It's time to
-        fill them in."""
-
+        """Fill in the empty attributes of this station."""
         # dictionary containing station's name, latitude, and longitude
         meta_dict = self._request_metadata()
 
@@ -132,8 +128,7 @@ def main(argv):
     """Driver function for program.
 
     Can be called with or without a command line argument indicating a user-
-    specified configuration file.
-    """
+    specified configuration file."""
     config_path = os.path.abspath(CONFIG_FILE)
 
     # Set different config file path based on optional user input.
@@ -177,46 +172,31 @@ def email_tides(station_list, email_set, smtp_dict):
     """Create an email containing station data from each of the stations
     in the given station_list. Send that email to each address in the
     email_set."""
-    sender = smtp_dict['sender']
-    host = smtp_dict['host']
-    port = int(smtp_dict['port'])
-    user = smtp_dict['user']
-    password = smtp_dict['password']
-
-    # Create an SMTP connection.
-    smtp_connection = smtplib.SMTP(host=host, port=port)
-
-    # Enter TLS mode. Everything from here, on is encrypted.
-    smtp_connection.starttls()
-    smtp_connection.login(user=user, password=password)
-
     # Craft a single HTML message body for use in all of the messages.
     body_html = gen_html_body(station_list)
 
-    # We're going to create one message for each recipient because it doesn't
-    # seem to be possible change the 'To' field for each message. After I
-    # dissect the MIMEMultipart module to figure out what makes it tick, I may
-    # rewrite this entire function. For now, working code beats broken code.
-    for address in email_set:
-        # "Multipurpose Internet Mail Extensions is an internet standard that
-        # extends the format of email..." There are multiple parts to it.
-        # See below:
-        #   https://en.wikipedia.org/wiki/MIME
-        message = MIMEMultipart()
+    # Create the message and add some primary parts.
+    message = EmailMessage()
+    message['From'] = smtp_dict['sender']
+    message['Subject'] = 'Your customized Pytide report'
 
-        message['From'] = sender
-        message['To'] = address
-        message['Subject'] = 'Your customized Pytide report'
+    # The content manager adds a Content-Type header specifying maintype as
+    # 'message' and subtype as 'html' if it is specified.
+    message.set_content(body_html, subtype='html')
 
-        # HTML is swell, but we want a MIMEText object for our message body.
-        message_html = MIMEText(body_html, 'html')
-        message.attach(message_html)
+    # Create a connection to the email server.
+    with SMTP(smtp_dict['host'], smtp_dict['port']) as connection:
+        # Enter TLS mode. Everything from here, on is encrypted.
+        connection.starttls()
+        connection.login(smtp_dict['user'], smtp_dict['password'])
 
-        # method for calling SMTP.sendmail() with a Message object
-        smtp_connection.send_message(message)
-
-    # Terminate the SMTP session and close the connection.
-    smtp_connection.quit()
+        # Send one message per recipient.
+        for address in email_set:
+            if not message['To']:
+                message['To'] = address
+            else:
+                message.replace_header('To', address)
+            connection.send_message(message)
 
 
 def gen_html_body(station_list):
