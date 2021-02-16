@@ -33,6 +33,8 @@ class TideStation:
     """An object that holds important NOAA tide station information like
     the station ID number, the station's name, and the low and high
     tides at the station"""
+    # a dictionary to hold all stations' metadata
+    _metadata_dict = []
 
     def __init__(self, station_id, station_name=None):
         self.id_ = station_id
@@ -40,23 +42,31 @@ class TideStation:
         self.latitude = None
         self.longitude = None
         self.tide_events = []
+
+        # Make one API call to retrieve metadata for ALL stations and read data
+        # as needed.
+        if not TideStation._metadata_dict:
+            TideStation._metadata_dict = TideStation._request_metadata()
+
+        # Fill missing metadata and tide events.
         self._fill_empty_data()
 
     def __str__(self):
         string_output = (f'ID# {self.id_}: {self.name} ({self.latitude}, '
-                         f'{self.longitude}')
+                         f'{self.longitude})')
         for tide in self.tide_events:
             string_output += f'\n\t{tide}'
         return string_output
 
-    def _request_metadata(self):
+    @staticmethod
+    def _request_metadata():
         """Return a dictionary containing the station's metadata."""
         # The API used here is specifically for gathering metadata about the
         # NOAA stations. It provides us with things like the name, latitude and
         # longitude of the station. For more info, see below.
         #   https://api.tidesandcurrents.noaa.gov/mdapi/prod/
-        metadata_url = (f'https://api.tidesandcurrents.noaa.gov/mdapi/prod/'
-                        f'webapi/stations/{self.id_!s}.json')
+        metadata_url = ('https://api.tidesandcurrents.noaa.gov/mdapi/prod'
+                        '/webapi/stations.json?type=tidepredictions')
 
         # Use requests to get a response and return a dictionary from the JSON.
         response = requests.get(metadata_url)
@@ -87,16 +97,19 @@ class TideStation:
 
     def _fill_empty_data(self):
         """Fill in the empty attributes of this station."""
-        # dictionary containing station's name, latitude, and longitude
-        meta_dict = self._request_metadata()
-
         # Start filling in the metadata.
-        if not self.name:
-            # A human-readable description is useful to have.
-            self.name = meta_dict['stations'][0]['name']
-        # Knowing the location could be pretty useful too.
-        self.latitude = meta_dict['stations'][0]['lat']
-        self.longitude = meta_dict['stations'][0]['lng']
+        for station in TideStation._metadata_dict['stations']:
+            if self.id_ == station['id']:
+                if not self.name:
+                    # A human-readable description is useful to have.
+                    self.name = station['name']
+
+                # Knowing the location could be pretty useful too.
+                self.latitude = station['lat']
+                self.longitude = station['lng']
+
+                # All done. Stop looking.
+                break
 
         # dictionary containing station's tide change, tide type, and time
         predict_dict = self._request_predictions()
@@ -109,13 +122,11 @@ class TideStation:
             # where the 0th list entry is the first tide event, 1st would be
             # second, and so forth.
             for event in predict_dict['predictions']:
-                tide_time = event['t']    # date/time value: 'YYYY-MM-DD HH:MM'
-                tide_level = event['v']   # water change value: '1.234'
-                tide_type = 'Low'
-                if event['type'] == 'H':  # tide type value: 'L' or 'H'
-                    tide_type = 'High'
-
-                tide_string = f'{tide_time} {tide_type} ({tide_level})'
+                tide_time = event['t']   # date/time value: 'YYYY-MM-DD HH:MM'
+                tide_level = event['v']  # water change value: '1.234'
+                # tide type value: 'L' or 'H'
+                tide_type = 'High' if event['type'] == 'H' else 'Low'
+                tide_string = f'{tide_time} {tide_type} ({tide_level}\')'
 
                 # Append this tide to the running list.
                 self.tide_events.append(tide_string)
