@@ -79,20 +79,19 @@ class TideStation:
         # This API requires the following fields. I've split them for the sake
         # of convenient editing later. See below for further explanation:
         #   https://api.tidesandcurrents.noaa.gov/api/prod/
-        base_url = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?'
-        parameters = [f'station={self.id_!s}',
-                      f'date=today',
-                      f'product=predictions',
-                      f'datum=MLLW',
-                      f'units=english',
-                      f'time_zone=lst_ldt',
-                      f'format=json',
-                      f'interval=hilo',
-                      f'application=Pytide']
-        full_url = base_url + '&'.join(parameters)
+        api_url = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter'
+        parameters = {'station': f'{self.id_!s}',
+                      'date': 'today',
+                      'product': 'predictions',
+                      'datum': 'MLLW',
+                      'units': 'english',
+                      'time_zone': 'lst_ldt',
+                      'format': 'json',
+                      'interval': 'hilo',
+                      'application': 'Pytide'}
 
         # Use requests to get a response and return a dictionary from the JSON.
-        response = requests.get(full_url)
+        response = requests.get(api_url, params=parameters)
         return response.json()
 
     def _fill_empty_data(self):
