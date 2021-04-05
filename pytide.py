@@ -28,6 +28,12 @@ import requests     # requests for API calls and JSON decoding
 # to reside in the same directory as this program.
 CONFIG_FILE = 'config.ini'
 
+# There may be a situation where one wants to save the generated email body to
+# disk for viewing instead of emailing it to recipients.
+SEND_EMAIL = True  # send email if true
+SAVE_EMAIL_BODY = False  # save email body if true
+OUTPUT_FILE = 'output.html'  # like CONFIG_FILE but for output
+
 
 class TideStation:
     """An object that holds important NOAA tide station information like
@@ -159,6 +165,7 @@ def main(argv):
     #   config.items('STATIONS') -> [('ID#A, DescripA'), ('ID#B', 'DescripB')]
     #   config.items('RECIPIENTS') -> [(EmailA, ''), ('EmailB', '')]
     #   config.items('SMTP SERVER') -> [('port', '587'), ('etc', 'etc')]
+    #   config.items('GOOGLE MAPS API') -> [('key', 'LongApiKeyFromGoogle')]
     station_dict = OrderedDict(config.items('STATIONS'))
 
     email_set = set()
@@ -174,17 +181,24 @@ def main(argv):
         station_name = station_dict[key]
         station_list.append(TideStation(station_id, station_name))
 
-    # Bring it all together - compose and send those emails.
-    email_tides(station_list, email_set, smtp_dict)
+    # Craft a single HTML message body for use in all of the messages.
+    body_html = gen_html_body(
+        station_list, config.get('GOOGLE MAPS API', 'key'))
+
+    # Save the message body locally for reviewing?
+    if SAVE_EMAIL_BODY:
+        with open(OUTPUT_FILE, 'w') as file:
+            file.writelines(body_html)
+
+    # Compose and send those emails.
+    if SEND_EMAIL:
+        email_tides(body_html, email_set, smtp_dict)
 
 
-def email_tides(station_list, email_set, smtp_dict):
+def email_tides(body_html, email_set, smtp_dict):
     """Create an email containing station data from each of the stations
     in the given station_list. Send that email to each address in the
     email_set."""
-    # Craft a single HTML message body for use in all of the messages.
-    body_html = gen_html_body(station_list)
-
     # Create the message and add some primary parts.
     message = EmailMessage()
     message['From'] = smtp_dict['sender']
@@ -209,7 +223,7 @@ def email_tides(station_list, email_set, smtp_dict):
             connection.send_message(message)
 
 
-def gen_html_body(station_list):
+def gen_html_body(station_list, api_key):
     """Create an HTML message body for attachment to an email."""
     # Jinja is the templating engine that will create the HTML body for the
     # email. I chose Jinja because its used in Flask, and Flask is on my list
@@ -226,7 +240,7 @@ def gen_html_body(station_list):
 
     # Pass the station list as an argument to the email_template for processing
     # and rendering; then, return a Unicode string with the resulting HTML.
-    return email_template.render(station_list=station_list)
+    return email_template.render(station_list=station_list, api_key=api_key)
 
 
 if __name__ == '__main__':
