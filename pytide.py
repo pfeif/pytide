@@ -22,7 +22,7 @@ import requests
 
 # Jinja2 is a templating engine. It will handle the HTML for the email body.
 #   https://palletsprojects.com/p/jinja/
-from jinja2 import Environment, PackageLoader
+from jinja2 import Environment, FileSystemLoader
 
 # The sole configuration file is assumed to be named config.ini and is expected
 # to reside in the same directory as this program.
@@ -232,8 +232,8 @@ def gen_html_body(station_list, api_key):
     # "The core component of Jinja is the Environment." It is used to store the
     # configuration.
     jinja_env = Environment(
-        loader=PackageLoader('pytide'),  # sets the package name
-        autoescape=True)                 # prevents cross-site scripting
+        loader=FileSystemLoader('templates'),   # sets the templates directory
+        autoescape=True)                        # prevents cross-site scripting
 
     # Asks the loader for the template and returns a Template object.
     email_template = jinja_env.get_template('email-template.html')
