@@ -16,14 +16,14 @@ run it manually too.
 ## Requirements
 
 * [A supported version of Python 3 (currently 3.6 or later)](https://www.python.org/downloads/)
-  * [Jinja2 library for Python](https://jinja.palletsprojects.com/en/2.11.x/)
+  * [Jinja2 library for Python](https://jinja.palletsprojects.com/en/3.0.x/)
   * [Requests library for Python](https://2.python-requests.org/en/master/)
 * [Git](https://git-scm.com/downloads) (optional)
 
 ## Usage
 
  * Clone (or download and unzip) this repository.
- * Install dependencies (requirements.txt provided for pip)
+ * Install dependencies (`requirements.txt` provided for pip)
  * Edit `config.ini` with your favorite text editor.
  * Run by typing `python pytide.py` into your shell.
 
