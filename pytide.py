@@ -4,8 +4,9 @@ request tide data from NOAA for each station, parse the data, format
 the data neatly, and email all acquired data to the given email address.
 """
 
-# OrderedDict allows the program to maintain user's input order.
-from collections import OrderedDict
+
+import os   # os.path for cross-platform compatibility
+import sys  # sys.argv for command line arguments
 
 # Python's built-in configuration file parser.
 from configparser import ConfigParser
@@ -16,13 +17,12 @@ from email.message import EmailMessage
 # SMTP for email server connections
 from smtplib import SMTP
 
+# requests for API calls and JSON decoding
+import requests
+
 # Jinja2 is a templating engine. It will handle the HTML for the email body.
 #   https://palletsprojects.com/p/jinja/
 from jinja2 import Environment, PackageLoader
-
-import os           # os.path for cross-platform compatibility
-import sys          # sys.argv for command line arguments
-import requests     # requests for API calls and JSON decoding
 
 # The sole configuration file is assumed to be named config.ini and is expected
 # to reside in the same directory as this program.
@@ -40,7 +40,7 @@ class TideStation:
     the station ID number, the station's name, and the low and high
     tides at the station"""
     # a dictionary to hold all stations' metadata
-    _metadata_dict = []
+    _metadata_dict = {}
 
     def __init__(self, station_id, station_name=None):
         self.id_ = station_id
@@ -166,7 +166,7 @@ def main(argv):
     #   config.items('RECIPIENTS') -> [(EmailA, ''), ('EmailB', '')]
     #   config.items('SMTP SERVER') -> [('port', '587'), ('etc', 'etc')]
     #   config.items('GOOGLE MAPS API') -> [('key', 'LongApiKeyFromGoogle')]
-    station_dict = OrderedDict(config.items('STATIONS'))
+    station_dict = dict(config.items('STATIONS'))
 
     email_set = set()
     for tuple_ in config.items('RECIPIENTS'):
