@@ -36,10 +36,9 @@ OUTPUT_FILE = 'output.html'  # like CONFIG_FILE but for output
 
 
 class TideStation:
-    """An object that holds important NOAA tide station information like
-    the station ID number, the station's name, and the low and high
-    tides at the station"""
-    # a dictionary to hold all stations' metadata
+    """A class that holds important NOAA tide station information like
+    a station ID, a name, and tide events for the station"""
+    # a class dictionary to hold all stations' metadata
     _metadata_dict = {}
 
     def __init__(self, station_id, station_name=None):
@@ -49,13 +48,13 @@ class TideStation:
         self.longitude = None
         self.tide_events = []
 
-        # Make one API call to retrieve metadata for ALL stations and read data
-        # as needed.
+        # Make sure we have metadata
         if not TideStation._metadata_dict:
-            TideStation._metadata_dict = TideStation._request_metadata()
+            TideStation._get_all_metadata()
 
-        # Fill missing metadata and tide events.
-        self._fill_empty_data()
+        # Fill in the blanks.
+        self._add_station_metadata()
+        self._add_tide_predictions()
 
     def __str__(self):
         string_output = (f'ID# {self.id_}: {self.name} ({self.latitude}, '
@@ -65,25 +64,36 @@ class TideStation:
         return string_output
 
     @staticmethod
-    def _request_metadata():
-        """Return a dictionary containing the station's metadata."""
+    def _get_all_metadata():
+        """Return a dictionary containing ALL stations' metadata pulled
+        from the NOAA metadata API."""
         # The API used here is specifically for gathering metadata about the
         # NOAA stations. It provides us with things like the name, latitude and
-        # longitude of the station. For more info, see below.
+        # longitude of each station. For more info, see below.
         #   https://api.tidesandcurrents.noaa.gov/mdapi/prod/
         metadata_url = ('https://api.tidesandcurrents.noaa.gov/mdapi/prod'
                         '/webapi/stations.json?type=tidepredictions')
 
         # Use requests to get a response and return a dictionary from the JSON.
         response = requests.get(metadata_url)
-        return response.json()
+        TideStation._metadata_dict = response.json()
 
-    def _request_predictions(self):
-        """Return a dictionary containing the station's prediction data."""
+    def _add_station_metadata(self) -> None:
+        """Add the station name (if not present), latitude, and
+        longitude to the TideStation."""
+        for station in TideStation._metadata_dict['stations']:
+            if self.id_ == station['id']:
+                if not self.name:
+                    self.name = station['name']
+                self.latitude = station['lat']
+                self.longitude = station['lng']
+                break
+
+    def _add_tide_predictions(self) -> None:
+        """Add NOAA tide data for the TideStation."""
         # The API used here is for gathering tide predictions from the NOAA
         # station. It'll give us the times and levels of the high / low tides.
-        # This API requires the following fields. I've split them for the sake
-        # of convenient editing later. See below for further explanation:
+        # See below for further explanation:
         #   https://api.tidesandcurrents.noaa.gov/api/prod/
         api_url = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter'
         parameters = {'station': f'{self.id_!s}',
@@ -96,38 +106,18 @@ class TideStation:
                       'interval': 'hilo',
                       'application': 'Pytide'}
 
-        # Use requests to get a response and return a dictionary from the JSON.
-        response = requests.get(api_url, params=parameters)
-        return response.json()
-
-    def _fill_empty_data(self):
-        """Fill in the empty attributes of this station."""
-        # Start filling in the metadata.
-        for station in TideStation._metadata_dict['stations']:
-            if self.id_ == station['id']:
-                if not self.name:
-                    # A human-readable description is useful to have.
-                    self.name = station['name']
-
-                # Knowing the location could be pretty useful too.
-                self.latitude = station['lat']
-                self.longitude = station['lng']
-
-                # All done. Stop looking.
-                break
-
-        # dictionary containing station's tide change, tide type, and time
-        predict_dict = self._request_predictions()
+        # Use requests to get a response and create a dictionary from the JSON.
+        predictions_dict = requests.get(api_url, params=parameters).json()
 
         # Verify prediction data is present.
-        if 'predictions' in predict_dict:
+        if 'predictions' in predictions_dict:
             # Start filling in the prediction data. The direct access would
             # appear as something along the lines of:
             #   predict_dict['predictions'][0]['type'],
             # where the 0th list entry is the first tide event, 1st would be
             # second, and so forth.
-            for event in predict_dict['predictions']:
-                tide_time = event['t']   # date/time value: 'YYYY-MM-DD HH:MM'
+            for event in predictions_dict['predictions']:
+                tide_time = event['t']  # date/time value: 'YYYY-MM-DD HH:MM'
                 tide_level = event['v']  # water change value: '1.234'
                 # tide type value: 'L' or 'H'
                 tide_type = 'High' if event['type'] == 'H' else 'Low'
@@ -136,7 +126,7 @@ class TideStation:
                 # Append this tide to the running list.
                 self.tide_events.append(tide_string)
         else:
-            self.tide_events.append(f'Error retrieving tides for station '
+            self.tide_events.append('Error retrieving tides for station '
                                     f'{self.id_}.')
 
 
