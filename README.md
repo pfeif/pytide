@@ -9,7 +9,7 @@ revolves around the tides.
 By updating the configuration file, the user can specify
 [NOAA tide stations](https://tidesandcurrents.noaa.gov/) that he or she wants
 to see data for and add email addresses for each person that should see that
-data. The idea is to set this program to run as a scheduled task at a prefered
+data. The idea is to set this program to run as a scheduled task at a preferred
 interval using a system like cron or systemd. Of course, you could choose to
 run it manually too.
 
