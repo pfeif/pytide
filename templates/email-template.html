@@ -13,9 +13,7 @@
     <div>
         <h3>ID# {{ station.id_ }}: {{ station.name }}</h3>
 
-        <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}"><img
-                src="https://maps.googleapis.com/maps/api/staticmap?markers={{ station.latitude }},{{ station.longitude }}&size=320x280&scale=2&zoom=15&key={{ api_key }}"
-                width="320" height="280"></a>
+        <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}"><img src="data:image/png;base64,{{ station.map_image }}" width="320" height="280"></a>
 
         <p>
             {% for tide in station.tide_events %}

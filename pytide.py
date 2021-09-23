@@ -5,8 +5,9 @@ the data neatly, and email all acquired data to the given email address.
 """
 
 
-import os   # os.path for cross-platform compatibility
-import sys  # sys.argv for command line arguments
+import base64   # base64.b64encode for map image encoding
+import os       # os.path for cross-platform compatibility
+import sys      # sys.argv for command line arguments
 
 # Python's built-in configuration file parser.
 from configparser import ConfigParser
@@ -30,9 +31,9 @@ CONFIG_FILE = 'config.ini'
 
 # There may be a situation where one wants to save the generated email body to
 # disk for viewing instead of emailing it to recipients.
-SEND_EMAIL = True  # send email if true
-SAVE_EMAIL_BODY = False  # save email body if true
-OUTPUT_FILE = 'output.html'  # like CONFIG_FILE but for output
+SEND_EMAIL = True               # send email if true
+SAVE_EMAIL_BODY = False         # save email body if true
+OUTPUT_FILE = 'output.html'     # like CONFIG_FILE but for output
 
 
 class TideStation:
@@ -40,6 +41,7 @@ class TideStation:
     a station ID, a name, and tide events for the station"""
     # a class dictionary to hold all stations' metadata
     _metadata_dict = {}
+    _api_key = None
 
     def __init__(self, station_id, station_name=None):
         self.id_ = station_id
@@ -47,6 +49,7 @@ class TideStation:
         self.latitude = None
         self.longitude = None
         self.tide_events = []
+        self.map_iamge = None
 
         # Make sure we have metadata
         if not TideStation._metadata_dict:
@@ -54,6 +57,7 @@ class TideStation:
 
         # Fill in the blanks.
         self._add_station_metadata()
+        self._add_map_image()
         self._add_tide_predictions()
 
     def __str__(self):
@@ -88,6 +92,25 @@ class TideStation:
                 self.latitude = station['lat']
                 self.longitude = station['lng']
                 break
+
+    def _add_map_image(self) -> None:
+        """Add a Google Maps image to the TideStation."""
+        # Maps are not embeddable in email messages, so map images must be
+        # static. They are stored with each TideStation so Jinja doesn't expose
+        # our API key in the HTML.
+        #   https://developers.google.com/maps/documentation/maps-static/overview
+        api_url = 'https://maps.googleapis.com/maps/api/staticmap'
+        parameters = {'markers': f'{self.latitude},{self.longitude}',
+                      'size': '320x280',
+                      'scale': '1',
+                      'zoom': '15',
+                      'key': f'{TideStation._api_key}'}
+
+        # Get a response from the API, encode the retrieved image (.content) as
+        # a Base64 bytes-like object, and assign the decoded string
+        # representation of the Base64 image to self.map_image.
+        response = requests.get(api_url, params=parameters, stream=True)
+        self.map_image = base64.b64encode(response.content).decode('utf-8')
 
     def _add_tide_predictions(self) -> None:
         """Add NOAA tide data for the TideStation."""
@@ -146,6 +169,7 @@ def main(argv):
         config.read_file(file)
 
     # Extract the user's config settings into more workable chunks.
+    TideStation._api_key = config.get('GOOGLE MAPS API', 'key')
     station_list = []
     for station in config.items('STATIONS'):
         station_list.append(TideStation(station[0], station[1]))
@@ -153,8 +177,7 @@ def main(argv):
     smtp_dict = dict(config.items('SMTP SERVER'))
 
     # Craft a single HTML message body for use in all of the messages.
-    message_body = compose_email(
-        station_list, config.get('GOOGLE MAPS API', 'key'))
+    message_body = compose_email(station_list)
 
     # Save the message body locally for reviewing?
     if SAVE_EMAIL_BODY:
@@ -166,7 +189,7 @@ def main(argv):
         send_email(message_body, email_set, smtp_dict)
 
 
-def compose_email(station_list, api_key):
+def compose_email(station_list):
     """Create an HTML message body for attachment to an email."""
     # Jinja's Environment is used to load templates and store config settings.
     jinja_env = Environment(
@@ -178,7 +201,7 @@ def compose_email(station_list, api_key):
 
     # Pass the station list as an argument to the email_template for processing
     # and rendering; then, return a Unicode string with the resulting HTML.
-    return email_template.render(station_list=station_list, api_key=api_key)
+    return email_template.render(station_list=station_list)
 
 
 def send_email(body_html, email_set, smtp_dict):
