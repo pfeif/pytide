@@ -135,57 +135,53 @@ def main(argv):
 
     Can be called with or without a command line argument indicating a user-
     specified configuration file."""
-    config_path = os.path.abspath(CONFIG_FILE)
+    # Set the user's config file path based on optional command line input.
+    config_path = os.path.abspath(argv[0] if argv else CONFIG_FILE)
 
-    # Set different config file path based on optional user input.
-    if argv:
-        config_path = os.path.abspath(argv[0])
-
-    # It will behoove us to allow non-values for the sake of giving users the
-    # option to not include a station description.
+    # Give the user the choice of excluding station names in the config.
     config = ConfigParser(allow_no_value=True, empty_lines_in_values=False)
 
-    # ConfigParser.read_file(file object)... With open(path) closes the
-    # file for us when we're done.
-    with open(config_path) as file:
+    # Read in that configuration data.
+    with open(config_path, mode='rt', encoding='utf-8') as file:
         config.read_file(file)
 
-    # ConfigParser.items('SECTION') returns a list of tuples with the user's
-    # entries. It goes something like this:
-    #   config.items('STATIONS') -> [('ID#A, DescripA'), ('ID#B', 'DescripB')]
-    #   config.items('RECIPIENTS') -> [(EmailA, ''), ('EmailB', '')]
-    #   config.items('SMTP SERVER') -> [('port', '587'), ('etc', 'etc')]
-    #   config.items('GOOGLE MAPS API') -> [('key', 'LongApiKeyFromGoogle')]
-    station_dict = dict(config.items('STATIONS'))
-
-    email_set = set()
-    for tuple_ in config.items('RECIPIENTS'):
-        email_set.add(tuple_[0])
-
+    # Extract the user's config settings into more workable chunks.
+    station_list = []
+    for station in config.items('STATIONS'):
+        station_list.append(TideStation(station[0], station[1]))
+    email_set = {tuple_[0] for tuple_ in config.items('RECIPIENTS')}
     smtp_dict = dict(config.items('SMTP SERVER'))
 
-    # Create a TideStation object for each ID, and add it to the list.
-    station_list = []
-    for key in station_dict:
-        station_id = key
-        station_name = station_dict[key]
-        station_list.append(TideStation(station_id, station_name))
-
     # Craft a single HTML message body for use in all of the messages.
-    body_html = gen_html_body(
+    message_body = compose_email(
         station_list, config.get('GOOGLE MAPS API', 'key'))
 
     # Save the message body locally for reviewing?
     if SAVE_EMAIL_BODY:
-        with open(OUTPUT_FILE, 'w') as file:
-            file.writelines(body_html)
+        with open(OUTPUT_FILE, mode='wt', encoding='utf-8') as file:
+            file.writelines(message_body)
 
     # Compose and send those emails.
     if SEND_EMAIL:
-        email_tides(body_html, email_set, smtp_dict)
+        send_email(message_body, email_set, smtp_dict)
 
 
-def email_tides(body_html, email_set, smtp_dict):
+def compose_email(station_list, api_key):
+    """Create an HTML message body for attachment to an email."""
+    # Jinja's Environment is used to load templates and store config settings.
+    jinja_env = Environment(
+        loader=FileSystemLoader('templates'),   # sets the templates directory
+        autoescape=True)                        # prevents cross-site scripting
+
+    # Asks the loader for the template and returns a Template object.
+    email_template = jinja_env.get_template('email-template.html')
+
+    # Pass the station list as an argument to the email_template for processing
+    # and rendering; then, return a Unicode string with the resulting HTML.
+    return email_template.render(station_list=station_list, api_key=api_key)
+
+
+def send_email(body_html, email_set, smtp_dict):
     """Create an email containing station data from each of the stations
     in the given station_list. Send that email to each address in the
     email_set."""
@@ -211,26 +207,6 @@ def email_tides(body_html, email_set, smtp_dict):
             else:
                 message.replace_header('To', address)
             connection.send_message(message)
-
-
-def gen_html_body(station_list, api_key):
-    """Create an HTML message body for attachment to an email."""
-    # Jinja is the templating engine that will create the HTML body for the
-    # email. I chose Jinja because its used in Flask, and Flask is on my list
-    # of things to pick up.
-
-    # "The core component of Jinja is the Environment." It is used to store the
-    # configuration.
-    jinja_env = Environment(
-        loader=FileSystemLoader('templates'),   # sets the templates directory
-        autoescape=True)                        # prevents cross-site scripting
-
-    # Asks the loader for the template and returns a Template object.
-    email_template = jinja_env.get_template('email-template.html')
-
-    # Pass the station list as an argument to the email_template for processing
-    # and rendering; then, return a Unicode string with the resulting HTML.
-    return email_template.render(station_list=station_list, api_key=api_key)
 
 
 if __name__ == '__main__':
