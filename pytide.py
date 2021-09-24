@@ -4,25 +4,16 @@ request tide data from NOAA for each station, parse the data, format
 the data neatly, and email all acquired data to the given email address.
 """
 
-
-import base64   # base64.b64encode for map image encoding
-import os       # os.path for cross-platform compatibility
-import sys      # sys.argv for command line arguments
-
-# Python's built-in configuration file parser.
+import base64
+import os
+import sys
 from configparser import ConfigParser
-
-# The preferred method of representing email since 3.6.
+from dataclasses import dataclass, field
 from email.message import EmailMessage
-
-# SMTP for email server connections
 from smtplib import SMTP
+from typing import Any, ClassVar
 
-# requests for API calls and JSON decoding
 import requests
-
-# Jinja2 is a templating engine. It will handle the HTML for the email body.
-#   https://palletsprojects.com/p/jinja/
 from jinja2 import Environment, FileSystemLoader
 
 # The sole configuration file is assumed to be named config.ini and is expected
@@ -36,23 +27,25 @@ SAVE_EMAIL_BODY = False         # save email body if true
 OUTPUT_FILE = 'output.html'     # like CONFIG_FILE but for output
 
 
+@dataclass()
 class TideStation:
     """A class that holds important NOAA tide station information like
     a station ID, a name, and tide events for the station"""
-    # a class dictionary to hold all stations' metadata
-    _metadata_dict = {}
-    _api_key = None
+    # class variables
+    _metadata_list: ClassVar[list[dict[str, Any]]] = []
+    api_key: ClassVar[str]
 
-    def __init__(self, station_id, station_name=None):
-        self.id_ = station_id
-        self.name = station_name
-        self.latitude = None
-        self.longitude = None
-        self.tide_events = []
-        self.map_iamge = None
+    # instance variables
+    id_: str
+    name: str = field(default='')
+    latitude: float = field(init=False)
+    longitude: float = field(init=False)
+    tide_events: list[str] = field(default_factory=list, init=False)
+    map_image: str = field(init=False, repr=False)
 
+    def __post_init__(self):
         # Make sure we have metadata
-        if not TideStation._metadata_dict:
+        if not TideStation._metadata_list:
             TideStation._get_all_metadata()
 
         # Fill in the blanks.
@@ -60,15 +53,8 @@ class TideStation:
         self._add_map_image()
         self._add_tide_predictions()
 
-    def __str__(self):
-        string_output = (f'ID# {self.id_}: {self.name} ({self.latitude}, '
-                         f'{self.longitude})')
-        for tide in self.tide_events:
-            string_output += f'\n\t{tide}'
-        return string_output
-
-    @staticmethod
-    def _get_all_metadata():
+    @classmethod
+    def _get_all_metadata(cls) -> None:
         """Return a dictionary containing ALL stations' metadata pulled
         from the NOAA metadata API."""
         # The API used here is specifically for gathering metadata about the
@@ -78,19 +64,20 @@ class TideStation:
         metadata_url = ('https://api.tidesandcurrents.noaa.gov/mdapi/prod'
                         '/webapi/stations.json?type=tidepredictions')
 
-        # Use requests to get a response and return a dictionary from the JSON.
+        # Use requests to get a response and set _metadata_dict to contain only
+        # the "stations" portion of the JSON.
         response = requests.get(metadata_url)
-        TideStation._metadata_dict = response.json()
+        cls._metadata_list = response.json()['stations']
 
     def _add_station_metadata(self) -> None:
         """Add the station name (if not present), latitude, and
         longitude to the TideStation."""
-        for station in TideStation._metadata_dict['stations']:
+        for station in TideStation._metadata_list:
             if self.id_ == station['id']:
                 if not self.name:
                     self.name = station['name']
-                self.latitude = station['lat']
-                self.longitude = station['lng']
+                self.latitude = round(station['lat'], 6)
+                self.longitude = round(station['lng'], 6)
                 break
 
     def _add_map_image(self) -> None:
@@ -104,7 +91,7 @@ class TideStation:
                       'size': '320x280',
                       'scale': '1',
                       'zoom': '15',
-                      'key': f'{TideStation._api_key}'}
+                      'key': f'{TideStation.api_key}'}
 
         # Get a response from the API, encode the retrieved image (.content) as
         # a Base64 bytes-like object, and assign the decoded string
@@ -130,17 +117,17 @@ class TideStation:
                       'application': 'Pytide'}
 
         # Use requests to get a response and create a dictionary from the JSON.
-        predictions_dict = requests.get(api_url, params=parameters).json()
+        predictionary = requests.get(api_url, params=parameters).json()
 
         # Verify prediction data is present.
-        if 'predictions' in predictions_dict:
+        if 'predictions' in predictionary:
             # Start filling in the prediction data. The direct access would
             # appear as something along the lines of:
             #   predict_dict['predictions'][0]['type'],
             # where the 0th list entry is the first tide event, 1st would be
             # second, and so forth.
-            for event in predictions_dict['predictions']:
-                tide_time = event['t']  # date/time value: 'YYYY-MM-DD HH:MM'
+            for event in predictionary['predictions']:
+                tide_time = event['t']   # date/time value: 'YYYY-MM-DD HH:MM'
                 tide_level = event['v']  # water change value: '1.234'
                 # tide type value: 'L' or 'H'
                 tide_type = 'High' if event['type'] == 'H' else 'Low'
@@ -169,11 +156,10 @@ def main(argv):
         config.read_file(file)
 
     # Extract the user's config settings into more workable chunks.
-    TideStation._api_key = config.get('GOOGLE MAPS API', 'key')
-    station_list = []
-    for station in config.items('STATIONS'):
-        station_list.append(TideStation(station[0], station[1]))
-    email_set = {tuple_[0] for tuple_ in config.items('RECIPIENTS')}
+    TideStation.api_key = config.get('GOOGLE MAPS API', 'key')
+    station_list = [TideStation(item[0], item[1])
+                    for item in config.items('STATIONS')]
+    email_set = {item[0] for item in config.items('RECIPIENTS')}
     smtp_dict = dict(config.items('SMTP SERVER'))
 
     # Craft a single HTML message body for use in all of the messages.
@@ -233,5 +219,4 @@ def send_email(body_html, email_set, smtp_dict):
 
 
 if __name__ == '__main__':
-    # Leave "python pytide.py" behind. We know that much already.
     main(sys.argv[1:])
