@@ -4,6 +4,11 @@ Oceanic and Atmospheric Administration (NOAA) and emailing that data to
 a list of recipients.
 """
 
+# For versions 3.7 & 3.8... Python 3.9 lets (and prefers) you use type hints
+# for many built-ins without importing them from typing module.
+# See PEP 585: https://www.python.org/dev/peps/pep-0585/
+from __future__ import annotations
+
 import os
 import sys
 from configparser import ConfigParser
