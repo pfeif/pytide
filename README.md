@@ -15,9 +15,10 @@ run it manually too.
 
 ## Requirements
 
-* [A supported version of Python 3 (currently 3.6 or later)](https://www.python.org/downloads/)
+* [Python version 3.7 or greater](https://www.python.org/downloads/)
   * [Jinja2 library for Python](https://jinja.palletsprojects.com/en/3.0.x/)
   * [Requests library for Python](https://2.python-requests.org/en/master/)
+* [Google Maps Static API key](https://developers.google.com/maps/documentation/maps-static/overview)
 * [Git](https://git-scm.com/downloads) (optional)
 
 ## Usage
