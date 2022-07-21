@@ -3,7 +3,7 @@
 {% block title %}Custom Tide Report{% endblock %}
 
 {% block content %}
-{% for station in station_list %}
+{% for station in tide_stations %}
 <div>
     <h3>ID# {{ station.id_ }}: {{ station.name }}</h3>
     <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}"><img
