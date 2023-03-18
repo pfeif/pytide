@@ -22,8 +22,8 @@ from requests.exceptions import RequestException
 from jinja2 import Environment, FileSystemLoader
 
 CONFIG = 'config.ini'
-SEND_EMAIL = False
-SAVE_EMAIL_LOCALLY = True
+SEND_EMAIL = True
+SAVE_EMAIL_LOCALLY = False
 OUTPUT = 'saved_message.eml'
 
 
