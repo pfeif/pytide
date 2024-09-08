@@ -1,12 +1,7 @@
 """
-Pytide: An application for retrieving tide predictions from the National
-Oceanic and Atmospheric Administration (NOAA) and emailing them to a
-list of recipients.
+Pytide: An application for retrieving tide predictions from the National Oceanic and Atmospheric
+Administration (NOAA) and emailing them to a list of recipients.
 """
-
-# Type hint compatibility for version 3.7 & 3.8
-# See PEP 585: https://www.python.org/dev/peps/pep-0585/
-from __future__ import annotations
 
 import os
 import sys
@@ -29,8 +24,8 @@ OUTPUT = 'saved_message.eml'
 
 @dataclass()
 class TideStation:
-    """A class that holds important NOAA tide station information like
-    a station ID, a name, and tide events for the station"""
+    """A class that holds important NOAA tide station information like a station ID, a name, and
+    tide events for the station"""
     # class variables
     _metadata: ClassVar[list[dict[str, Any]]] = []
     api_key: ClassVar[str]
@@ -53,29 +48,28 @@ class TideStation:
         self._add_tide_predictions()
 
     def __str__(self) -> str:
-        output = f'ID# {self.id_}: {self.name} ' \
-                 f'({self.latitude}, {self.longitude})'
+        output = f'ID# {self.id_}: {self.name} ({self.latitude}, {self.longitude})'
+
         for tide in self.tide_events:
             output += f'\n\t{tide}'
+
         return output
 
     @classmethod
     def _get_all_metadata(cls) -> None:
         """Get metadata for all TideStations."""
-        # The API used here is specifically for gathering metadata about the
-        # NOAA stations. It provides us with things like the name, latitude and
-        # longitude of each station. For more info, see below.
-        #   https://api.tidesandcurrents.noaa.gov/mdapi/prod/
-        api_url = ('https://api.tidesandcurrents.noaa.gov/mdapi/prod'
-                   '/webapi/stations.json?type=tidepredictions')
+        # The API used here is specifically for gathering metadata about the NOAA stations. It
+        # provides us with things like the name, latitude and longitude of each station.
+        #   https://api.tidesandcurrents.noaa.gov/mdapi/prod/.
+        api_url = 'https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=tidepredictions'
 
         try:
-            response = requests.get(api_url)
+            response = requests.get(api_url, timeout=10)
             response.raise_for_status()
 
             cls._metadata = response.json()['stations']
         except RequestException as error:
-            raise SystemExit(f'Unable to retrieve station metadata -> {error}')
+            raise SystemExit(f'Unable to retrieve station metadata -> {error}') from error
 
     def _add_station_metadata(self) -> None:
         """Add station name (if not present), latitude, and longitude."""
@@ -91,9 +85,8 @@ class TideStation:
 
     def _add_map_image(self) -> None:
         """Add a static map image for the station."""
-        # Maps are not embeddable in email messages, so map images must be
-        # static. They are stored with each TideStation so Jinja doesn't expose
-        # our API key in the rendered HTML.
+        # Maps are not embeddable in email messages, so map images must be static. They are stored
+        # with each TideStation so Jinja doesn't expose our API key in the rendered HTML.
         #   https://developers.google.com/maps/documentation/maps-static/overview
         api_url = 'https://maps.googleapis.com/maps/api/staticmap'
         parameters = {'markers': f'{self.latitude},{self.longitude}',
@@ -103,22 +96,21 @@ class TideStation:
                       'key': f'{TideStation.api_key}'}
 
         try:
-            response = requests.get(api_url, params=parameters, stream=True)
+            response = requests.get(api_url, params=parameters, stream=True, timeout=10)
             response.raise_for_status()
 
             self.map_image = response.content
 
             # Set a Content-ID for use in the HTML and EmailMessage later.
-            self.map_image_cid = make_msgid(self.id_, 'pfeifer.co')
+            self.map_image_cid = make_msgid(self.id_, 'alpha-bits.ooo')
         except RequestException as error:
             print(f'Unable to retrieve map image for station {self.id_} -> '
                   f'{error}')
 
     def _add_tide_predictions(self) -> None:
-        """Add tide predictions for the station."""
-        # The API used here is for gathering tide predictions from the NOAA
-        # station. It'll give us the times and levels of the high / low tides.
-        # See below for further explanation:
+        """Query NOAA and add tide predictions for the station."""
+        # The API used here is for gathering tide predictions from the NOAA station. It'll give us
+        # the times and levels of the high / low tides.
         #   https://api.tidesandcurrents.noaa.gov/api/prod/
         api_url = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter'
         parameters = {'station': f'{self.id_!s}',
@@ -132,12 +124,12 @@ class TideStation:
                       'application': 'Pytide: https://github.com/pfeif/pytide'}
 
         try:
-            response = requests.get(api_url, params=parameters)
+            response = requests.get(api_url, params=parameters, timeout=10)
             response.raise_for_status()
 
             predictionary = response.json()
         except RequestException as error:
-            raise SystemExit(f'Unable to retrieve tide predictions -> {error}')
+            raise SystemExit(f'Unable to retrieve tide predictions -> {error}') from error
 
         for event in predictionary['predictions']:
             date_time = event['t']  # 'YYYY-MM-DD HH:MM'
@@ -148,7 +140,7 @@ class TideStation:
             self.tide_events.append(tide_string)
 
 
-def main(argv):
+def main(argv: list[str]):
     # Set the user's config file path based on optional command line input.
     config_path = os.path.abspath(argv[0] if argv else CONFIG)
 
@@ -160,8 +152,7 @@ def main(argv):
 
     # Extract the user configuration settings.
     TideStation.api_key = config.get('GOOGLE MAPS API', 'key')
-    tide_stations: list[TideStation] = [TideStation(item[0], item[1])
-                                        for item in config.items('STATIONS')]
+    tide_stations: list[TideStation] = [TideStation(item[0], item[1]) for item in config.items('STATIONS')]
     recipients: set[str] = {item[0] for item in config.items('RECIPIENTS')}
     smtp_settings = dict(config.items('SMTP SERVER'))
 
@@ -177,8 +168,7 @@ def main(argv):
 
 
 def compose_email(stations: list[TideStation]) -> EmailMessage:
-    """Create an email containing station data from each of the stations
-    in the given stations."""
+    """Return one EmailMessage containing data from each station in stations."""
     plain_text_body = '\n\n'.join(str(station) for station in stations)
 
     jinja_env = Environment(
@@ -189,21 +179,18 @@ def compose_email(stations: list[TideStation]) -> EmailMessage:
 
     html_body = email_template.render(tide_stations=stations)
 
-    # The EmailMessage class is unnecessarily complicated, but behind the
-    # scenes, it automagically sets header information and mutates the message
-    # structure to fit our needs.
+    # The EmailMessage class is unnecessarily complicated, but behind the scenes, it automagically
+    # sets header information and mutates the message structure to fit our needs.
     message = EmailMessage()
     message['Subject'] = 'Your customized Pytide report'
     message.set_content(plain_text_body)
     message.add_alternative(html_body, subtype='html')
 
-    # Add the static map images as attachments to the message... This is not a
-    # simple method call. I've debugged, followed the stack traces, generated
-    # UML diagrams, and I finally understand - it's author(s) hold an unhealthy
-    # view on mental anguish... Just give it raw image bytes, make sure the
-    # string passed to cid has angle brackets around it, and make sure those
-    # angle brackets are stripped from the cid in your HTML. Everything should
-    # be fine.
+    # Add the static map images as attachments to the message... This is not a simple method call.
+    # I've debugged, followed the stack traces, generated UML diagrams, and I finally understand -
+    # it's author(s) hold an unhealthy view on mental anguish... Just give it raw image bytes, make
+    # sure the string passed to cid has angle brackets around it, and make sure those angle brackets
+    # are stripped from the cid in your HTML. Everything should be fine.
     for station in stations:
         message.add_attachment(station.map_image,
                                maintype='image',
@@ -214,9 +201,8 @@ def compose_email(stations: list[TideStation]) -> EmailMessage:
     return message
 
 
-def send_email(message: EmailMessage, recipients: set[str],
-               smtp_settings: dict[str, str]) -> None:
-    """Email each recipient."""
+def send_email(message: EmailMessage, recipients: set[str], smtp_settings: dict[str, str]) -> None:
+    """Send message to each recipient in recipients using smtp_settings."""
     message['From'] = smtp_settings['sender']
 
     with SMTP(smtp_settings['host'], int(smtp_settings['port'])) as connection:

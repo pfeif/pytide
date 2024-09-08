@@ -6,8 +6,9 @@
 {% for station in tide_stations %}
 <div>
     <h3>ID# {{ station.id_ }}: {{ station.name }}</h3>
-    <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}"><img
-            src="cid:{{ station.map_image_cid.strip('<>') }}" alt="Map image for {{ station.name }}"></a>
+    <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}">
+        <img src="cid:{{ station.map_image_cid.strip('<>') }}" alt="Map for {{ station.name }}">
+    </a>
     <div>
         <ul>
             {% for tide in station.tide_events %}
@@ -15,7 +16,6 @@
             {% endfor %}
         </ul>
     </div>
-
 </div>
 {% endfor %}
 {% endblock %}
