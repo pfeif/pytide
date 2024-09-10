@@ -17,9 +17,10 @@ from requests.exceptions import RequestException
 from jinja2 import Environment, FileSystemLoader
 
 CONFIG = 'config.ini'
+
 SEND_EMAIL = True
-SAVE_EMAIL_LOCALLY = False
-OUTPUT = 'saved_message.eml'
+SAVE_EMAIL = False
+SAVE_HTML = False
 
 
 @dataclass()
@@ -102,10 +103,9 @@ class TideStation:
             self.map_image = response.content
 
             # Set a Content-ID for use in the HTML and EmailMessage later.
-            self.map_image_cid = make_msgid(self.id_, 'alpha-bits.ooo')
+            self.map_image_cid = make_msgid(self.id_)
         except RequestException as error:
-            print(f'Unable to retrieve map image for station {self.id_} -> '
-                  f'{error}')
+            print(f'Unable to retrieve map image for station {self.id_} -> {error}')
 
     def _add_tide_predictions(self) -> None:
         """Query NOAA and add tide predictions for the station."""
@@ -159,8 +159,8 @@ def main(argv: list[str]):
     # Craft a single HTML message body for use in all messages.
     message = compose_email(tide_stations)
 
-    if SAVE_EMAIL_LOCALLY:
-        with open(OUTPUT, mode='wt', encoding='utf-8') as file:
+    if SAVE_EMAIL:
+        with open('message.eml', mode='wt', encoding='utf-8') as file:
             file.writelines(message.as_string())
 
     if SEND_EMAIL:
@@ -175,9 +175,15 @@ def compose_email(stations: list[TideStation]) -> EmailMessage:
         loader=FileSystemLoader('templates'),  # sets the templates directory
         autoescape=True)  # prevents cross-site scripting
 
-    email_template = jinja_env.get_template('email-template.html')
+    email_template = jinja_env.get_template('bootstrap-email-template.html')
 
-    html_body = email_template.render(tide_stations=stations)
+    logo_image_cid = make_msgid('pytide-logo')
+
+    html_body = email_template.render(tide_stations=stations, logo_cid=logo_image_cid)
+
+    if SAVE_HTML:
+        with open('message.html', mode='wt', encoding='utf-8') as file:
+            file.writelines(html_body)
 
     # The EmailMessage class is unnecessarily complicated, but behind the scenes, it automagically
     # sets header information and mutates the message structure to fit our needs.
@@ -192,10 +198,12 @@ def compose_email(stations: list[TideStation]) -> EmailMessage:
     # sure the string passed to cid has angle brackets around it, and make sure those angle brackets
     # are stripped from the cid in your HTML. Everything should be fine.
     for station in stations:
-        message.add_attachment(station.map_image,
-                               maintype='image',
-                               subtype='png',
-                               cid=station.map_image_cid)
+        message.add_attachment(station.map_image, maintype='image', subtype='png', cid=station.map_image_cid)
+
+    with open('./assets/img/logo-192.png', 'rb') as file:
+        logo_image_bytes = file.read()
+
+    message.add_attachment(logo_image_bytes, maintype='image', subtype='png', cid=logo_image_cid)
 
     # Return the (mostly) complete EmailMessage for sending.
     return message

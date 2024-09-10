@@ -12,7 +12,7 @@ systemd. Of course, you could choose to run it manually too.
 
 ## Requirements
 
-- A [currently-supported][python-support] version of [Python][python-download] (currently >= 3.7)
+- A [currently-supported][python-support] version of [Python][python-download] (currently >= 3.9)
     - [Jinja2][jinja] library for Python
     - [Requests][requests] library for Python
 - [Google Maps Static][maps] API key

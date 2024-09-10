@@ -1,21 +1,42 @@
-{% extends "base-template.html" %}
+<!DOCTYPE html>
+<html lang="en">
 
-{% block title %}Custom Tide Report{% endblock %}
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Tide Report | Pytide</title>
+</head>
 
-{% block content %}
-{% for station in tide_stations %}
-<div>
-    <h3>ID# {{ station.id_ }}: {{ station.name }}</h3>
-    <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}">
-        <img src="cid:{{ station.map_image_cid.strip('<>') }}" alt="Map for {{ station.name }}">
-    </a>
-    <div>
-        <ul>
-            {% for tide in station.tide_events %}
-            <li>{{ tide }}</li>
-            {% endfor %}
-        </ul>
+<body>
+    <div class="space-y-2">
+        <div id="logo-container" class="container">
+            <img id="logo" class="ax-center my-10 w-48" src="cid:{{ logo_cid.strip('<>') }}" alt="Pytide logo">
+        </div>
+
+        {% for station in tide_stations %}
+        <div id="{{ station.id_ }}-container" class="container">
+            <div class="card p-4">
+                <h3>ID# {{ station.id_ }}</h3>
+                <h4 class="text-muted pl-3">{{ station.name }}</h4>
+                <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}">
+                    <img src="cid:{{ station.map_image_cid.strip('<>') }}" alt="Map for {{ station.name }}" class="ax-center rounded-sm my-4">
+                </a>
+                <div class="ax-center space-y-1">
+                    {% for tide in station.tide_events %}
+                    <p>{{ tide }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div id="footer" class="container">
+            <div class="text-muted text-center my-6">
+                Custom tide report generated with Pytide<br>
+                <a href="https://github.com/pfeif/pytide">https://github.com/pfeif/pytide</a>
+            </div>
+        </div>
     </div>
-</div>
-{% endfor %}
-{% endblock %}
+</body>
+
+</html>
