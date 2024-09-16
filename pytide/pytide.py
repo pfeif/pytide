@@ -4,25 +4,35 @@ Administration (NOAA) and emailing them to a list of recipients.
 """
 
 import os
-import sys
 from configparser import ConfigParser
 from email.message import EmailMessage
 from email.utils import make_msgid
 from smtplib import SMTP
 
+import click
 from jinja2 import Environment, FileSystemLoader
 from station import Station
 
-SEND_EMAIL = True
-SAVE_EMAIL = False
-SAVE_HTML = False
 CODE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def main(argv: list[str]):
+@click.command()
+@click.option('--config-file', help='Use a custom configuration file')
+@click.option('--send-email', default=True, show_default=True,  help='Send the email to recipients')
+@click.option('--save-email', default=False, show_default=True, help='Save the email message locally')
+@click.option('--save-html', default=False, show_default=True, help='Save the HTML message body locally')
+def main(config_file: str, send_email: bool, save_email: bool, save_html: bool):
+    """
+    Retrieve tide predictions for NOAA tide stations and email them to recipients.\f
+
+    :param str config_email: Optional configuration file.
+    :param bool send_email: Flag for sending email
+    :param bool save_email: Flag for saving email message locally
+    :param bool save_html: Flag for saving HTML email message body locally
+    """
     # Set the user's config file path based on optional command line input.
-    if argv:
-        config_path = os.path.abspath(argv[0])
+    if config_file:
+        config_path = os.path.abspath(config_file)
     else:
         config_path = os.path.join(CODE_DIR, '..', 'config.ini')
 
@@ -39,19 +49,19 @@ def main(argv: list[str]):
     smtp_settings = dict(config.items('SMTP SERVER'))
 
     # Craft a single HTML message body for use in all messages.
-    message = compose_email(tide_stations)
+    message = compose(tide_stations, save_html)
 
-    if SAVE_EMAIL:
-        output_path = os.path.join(CODE_DIR, 'message.eml')
+    if save_email:
+        output_path = os.path.join(CODE_DIR, '..', 'message.eml')
 
         with open(output_path, mode='wt', encoding='utf-8') as file:
             file.writelines(message.as_string())
 
-    if SEND_EMAIL:
-        send_email(message, recipients, smtp_settings)
+    if send_email:
+        send(message, recipients, smtp_settings)
 
 
-def compose_email(stations: list[Station]) -> EmailMessage:
+def compose(stations: list[Station], save_html: bool) -> EmailMessage:
     """Return one EmailMessage containing data from each station in stations."""
     plain_text_body = '\n\n'.join(str(station) for station in stations)
 
@@ -67,7 +77,7 @@ def compose_email(stations: list[Station]) -> EmailMessage:
 
     html_body = email_template.render(tide_stations=stations, logo_cid=logo_image_cid)
 
-    if SAVE_HTML:
+    if save_html:
         output_path = os.path.join(CODE_DIR, '..', 'message.html')
 
         with open(output_path, mode='wt', encoding='utf-8') as file:
@@ -99,7 +109,7 @@ def compose_email(stations: list[Station]) -> EmailMessage:
     return message
 
 
-def send_email(message: EmailMessage, recipients: set[str], smtp_settings: dict[str, str]) -> None:
+def send(message: EmailMessage, recipients: set[str], smtp_settings: dict[str, str]) -> None:
     """Send message to each recipient in recipients using smtp_settings."""
     message['From'] = smtp_settings['sender']
 
@@ -118,4 +128,4 @@ def send_email(message: EmailMessage, recipients: set[str], smtp_settings: dict[
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

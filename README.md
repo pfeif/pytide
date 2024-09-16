@@ -13,8 +13,9 @@ systemd. Of course, you could choose to run it manually too.
 ## Requirements
 
 - A [currently-supported][python-support] version of [Python][python-download] (currently >= 3.9)
-    - [Jinja2][jinja] library for Python
-    - [Requests][requests] library for Python
+    - [Click][click]
+    - [Jinja2][jinja]
+    - [Requests][requests]
 - [Google Maps Static][maps] API key
 - [Git][git] (optional)
 
@@ -25,12 +26,12 @@ systemd. Of course, you could choose to run it manually too.
 - Install dependencies (`requirements.txt` provided for pip)
     - `pip install -r requirements.txt`
 - Edit `config.ini` with your favorite text editor or create multiple config files which can be
-    specified at the command line.
+    specified through the command line.
 
 ## Usage
 
-- Run manually by executing `python pytide.py` in your shell to use the default config file or
-    `python pytide.py <custom config filename>`.
+- Run manually by executing `python pytide/pytide.py` in your shell to use the default config file or
+    `python pytide/pytide.py <custom config filename>`.
 - Schedule with your task scheduler of choice using one of the commands above.
 
 ## License
@@ -39,8 +40,9 @@ This project is licensed under the terms of the MIT license. See [LICENSE.md](LI
 details.
 
 
+[click]: https://click.palletsprojects.com/en/8.1.x/
 [git]: https://git-scm.com/
-[jinja]: https://palletsprojects.com/p/jinja/
+[jinja]: https://jinja.palletsprojects.com/
 [maps]: https://developers.google.com/maps/documentation/maps-static/overview
 [noaa]: https://tidesandcurrents.noaa.gov/
 [python-download]: https://www.python.org/
