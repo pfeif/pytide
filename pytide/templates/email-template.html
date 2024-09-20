@@ -19,7 +19,7 @@
                 <h3>ID# {{ station.id_ }}</h3>
                 <h4 class="text-muted pl-3">{{ station.name }}</h4>
                 <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}">
-                    <img src="cid:{{ station.map_image_cid.strip('<>') }}" alt="Map for {{ station.name }}" class="ax-center rounded-sm my-4">
+                    <img src="cid:{{ station.image.content_id.strip('<>') }}" alt="Map for {{ station.name }}" class="ax-center rounded-sm my-4">
                 </a>
                 <div class="ax-center space-y-1">
                     {% for tide in station.tide_events %}
