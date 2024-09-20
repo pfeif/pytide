@@ -12,11 +12,14 @@ from services import email
 
 
 @click.command()
-@click.option('--config-file', help='Use a custom configuration file')
-@click.option('--send-email', default=True, show_default=True,  help='Send the email to recipients')
-@click.option('--save-email', default=False, show_default=True, help='Save the email message locally')
-@click.option('--save-html', default=False, show_default=True, help='Save the HTML message body locally')
-def main(config_file: str, send_email: bool, save_email: bool, save_html: bool) -> None:
+@click.option('--config-file', show_envvar=True, help='Use a custom configuration file')
+@click.option('--maps-api-key', show_envvar=True, allow_from_autoenv=True,
+              help='Your Google Maps Static API key (Overrides value in configuration file)')
+@click.option('--send/--no-send', 'send_email', default=True, show_default=True, allow_from_autoenv=True,
+              help='Send the email to recipients')
+@click.option('--save-email', is_flag=True, allow_from_autoenv=True, help='Save the email message locally')
+@click.option('--save-html', is_flag=True, allow_from_autoenv=True, help='Save the HTML message body locally')
+def main(config_file: str, maps_api_key: str, send_email: bool, save_email: bool, save_html: bool) -> None:
     """
     Retrieve tide predictions for NOAA tide stations and email them to recipients.\f
 
@@ -39,8 +42,8 @@ def main(config_file: str, send_email: bool, save_email: bool, save_html: bool) 
     with open(config_path, mode='rt', encoding='utf-8') as file:
         config.read_file(file)
 
-    # Extract the user configuration settings.
-    Station.api_key = config.get('GOOGLE MAPS API', 'key')
+    # Set the user configuration settings.
+    Station.api_key = maps_api_key if maps_api_key else config.get('GOOGLE MAPS API', 'key')
     stations: list[Station] = [Station(item[0], item[1]) for item in config.items('STATIONS')]
     recipients: set[str] = {item[0] for item in config.items('RECIPIENTS')}
     smtp_settings = dict(config.items('SMTP SERVER'))
@@ -53,4 +56,4 @@ def main(config_file: str, send_email: bool, save_email: bool, save_html: bool) 
 
 
 if __name__ == '__main__':
-    main()
+    main(auto_envvar_prefix='PYTIDE')
