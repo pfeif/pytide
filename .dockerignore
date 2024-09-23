@@ -15,3 +15,5 @@
 
 # Git files
 **/.git
+**/.gitattributes
+**/.gitignore

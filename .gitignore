@@ -1,0 +1,12 @@
+# Project cache
+**/__pycache__
+**/.mypy_cache
+
+# Development environments
+**/.idea
+**/.vs
+**/.vscode
+**/.venv
+
+# Configuration files
+**/*?config.ini
