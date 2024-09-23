@@ -1,0 +1,7 @@
+name: "pytide"
+services:
+  cli:
+    container_name: "pytide_cli"
+    build:
+      context: .
+      dockerfile: "./Dockerfile"

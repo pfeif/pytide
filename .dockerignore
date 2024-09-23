@@ -1,0 +1,17 @@
+# Project cache
+**/__pycache__
+**/.mypy_cache
+
+# Development environments
+**/.idea
+**/.vs
+**/.vscode
+**/.venv
+
+# Docker configuration
+**/.dockerignore
+**/Dockerfile
+**/compose.yaml
+
+# Git files
+**/.git
