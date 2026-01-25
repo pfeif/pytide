@@ -1,14 +1,16 @@
 """
 Functions for creating and sending emails
 """
+
 import os
 from email.message import EmailMessage
 from email.utils import make_msgid
 from smtplib import SMTP
 
 from jinja2 import Environment, FileSystemLoader
-from models.image import Image
-from models.station import Station
+
+from pytide.models.image import Image
+from pytide.models.station import Station
 
 
 def create_message(source_dir: str, stations: list[Station], save_html: bool, save_email: bool) -> EmailMessage:
@@ -36,7 +38,8 @@ def create_message(source_dir: str, stations: list[Station], save_html: bool, sa
         os.path.join(source_dir, 'templates'),
         'bootstrap-email-template.html',
         stations,
-        logo.content_id)
+        logo.content_id,
+    )
 
     if save_html:
         output_path = os.path.join(source_dir, '..', 'message.html')
@@ -98,7 +101,8 @@ def __render_template(templates_path: str, template_name: str, stations: list[St
     """
     jinja_env = Environment(
         loader=FileSystemLoader(templates_path),  # sets the templates directory
-        autoescape=True)  # prevents cross-site scripting
+        autoescape=True,  # prevents cross-site scripting
+    )
 
     email_template = jinja_env.get_template(template_name)
 

@@ -1,6 +1,7 @@
 """
 Functions for retrieving tide predictions and station metadata
 """
+
 from typing import Any
 
 import requests
@@ -51,7 +52,7 @@ def get_predictions_for_station(station_id: str) -> Any:
         'time_zone': 'lst_ldt',
         'format': 'json',
         'interval': 'hilo',
-        'application': 'Pytide: https://github.com/pfeif/pytide'
+        'application': 'Pytide: https://github.com/pfeif/pytide',
     }
 
     try:

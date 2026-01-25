@@ -6,16 +6,24 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
 
-# Install package requirements using pip with caching disabled
-COPY requirements.txt .
-RUN python -m pip install --no-cache-dir -r requirements.txt
-
-# Set the image's working directory and copy the program files except those in .dockerignore into
-# the container
+# Set the image's working directory
 WORKDIR /app
-COPY . /app
 
-# Creates a non-root user with an explicit UID and adds permission to access the /app folder.
+# Install uv
+RUN pip install --no-cache-dir uv
+
+# Copy required files
+COPY pyproject.toml uv.lock* ./
+COPY README.md LICENSE.md ./
+COPY src/ src/
+
+# Install the pytide package
+RUN uv pip install --system .
+
+# Remove the src directory when it's no longer needed
+RUN rm -rf src
+
+# Create a non-root user with an explicit UID and adds permission to access the /app folder.
 ARG UID=10001
 RUN adduser \
     --disabled-password \
@@ -26,5 +34,5 @@ RUN adduser \
     && chown -R appuser /app
 USER appuser
 
-# Execute the script. If needed, append command line arguments.
-CMD ["python", "./pytide/pytide.py"]
+# Execute the script.
+CMD ["pytide"]

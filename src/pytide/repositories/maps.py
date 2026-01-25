@@ -1,6 +1,7 @@
 """
 Function for retrieving static map images
 """
+
 from typing import Any, Union
 
 import requests
@@ -27,7 +28,7 @@ def get_map_image(latitude: str, longitude: str, api_key: str) -> Union[bytes, A
         'size': '320x280',
         'scale': '1',
         'zoom': '15',
-        'key': f'{api_key}'
+        'key': f'{api_key}',
     }
 
     try:

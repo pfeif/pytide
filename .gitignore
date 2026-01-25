@@ -1,6 +1,6 @@
 # Project cache
 **/__pycache__
-**/.mypy_cache
+**/.*_cache
 
 # Development environments
 **/.idea
@@ -10,3 +10,8 @@
 
 # Configuration files
 **/*?config.ini
+
+# Python packaging artifacts
+**/*.egg-info
+**/dist
+**/build
