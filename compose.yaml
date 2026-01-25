@@ -2,6 +2,10 @@ name: "pytide"
 services:
   cli:
     container_name: "pytide_cli"
+    environment:
+      PYTIDE_CONFIG_FILE: /config/config.ini
+    volumes:
+      - ./config.ini:/config/config.ini:ro
     build:
       context: .
       dockerfile: "./Dockerfile"

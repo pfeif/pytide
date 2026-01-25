@@ -17,3 +17,8 @@
 **/.git
 **/.gitattributes
 **/.gitignore
+
+# Python packaging artifacts
+**/*.egg-info
+**/dist
+**/build

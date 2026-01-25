@@ -1,12 +1,13 @@
 """
 Class for station data
 """
+
 from dataclasses import dataclass, field
 from email.utils import make_msgid
 from typing import Any, ClassVar
 
-from models.image import Image
-from repositories import maps, tides
+from pytide.models.image import Image
+from pytide.repositories import maps, tides
 
 
 @dataclass()
@@ -15,6 +16,7 @@ class Station:
     A class that holds important NOAA tide station information like a station ID, a name, and tide
     events for the station
     """
+
     _metadata: ClassVar[list[dict[str, Any]]] = tides.get_all_station_metadata()
     api_key: ClassVar[str]
 
@@ -59,7 +61,7 @@ class Station:
             date_time = event['t']  # 'YYYY-MM-DD HH:MM'
             water_change = event['v']  # '1.234'
             tide_type = 'High' if event['type'] == 'H' else 'Low'  # 'L' or 'H'
-            tide_string = f'{date_time} {tide_type} ({water_change}\')'
+            tide_string = f"{date_time} {tide_type} ({water_change}')"
 
             self.tide_events.append(tide_string)
 
