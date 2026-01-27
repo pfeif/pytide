@@ -45,7 +45,7 @@
                                 <tbody>
                                   <tr>
                                     <td style="line-height: 24px; font-size: 16px; margin: 0;" align="left">
-                                      <img id="logo" class="w-48" src="cid:{{ logo_cid.strip('<>') }}" alt="Pytide logo" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; width: 192px; border-style: none; border-width: 0;" width="192">
+                                      <img id="logo" class="w-48" src="cid:{{ logo.content_id_normalized }}" alt="Pytide logo" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; width: 192px; border-style: none; border-width: 0;" width="192">
                                     </td>
                                   </tr>
                                 </tbody>
@@ -125,7 +125,7 @@
                                           <tbody>
                                             <tr>
                                               <td style="line-height: 24px; font-size: 16px; margin: 0;" align="left">
-                                                <img src="cid:{{ station.image.content_id.strip('<>') }}" alt="Map for {{ station.name }}" class="rounded-sm" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; border-radius: 2px; border-style: none; border-width: 0;">
+                                                <img src="cid:{{ station.image.content_id_normalized }}" alt="Map for {{ station.name }}" class="rounded-sm" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; border-radius: 2px; border-style: none; border-width: 0;">
                                               </td>
                                             </tr>
                                           </tbody>
@@ -145,9 +145,24 @@
                                           <tr>
                                             <td style="line-height: 24px; font-size: 16px; margin: 0;" align="left">
                                               <div class="space-y-1">
-                                                {% for tide in station.tides %}
-                                                <p style="line-height: 24px; font-size: 16px; width: 100%; margin: 0;" align="left">{{ tide }}</p>
-                                                {% endfor %}
+                                                <table class="table w-100" border="0" cellpadding="0" cellspacing="0" style="width: 100%; max-width: 100%;">
+                                                  <thead>
+                                                    <tr>
+                                                      <th class="text-center" style="line-height: 24px; font-size: 16px; border-bottom-width: 2px; border-bottom-color: #e2e8f0; border-bottom-style: solid; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 12px;" align="center" valign="top">Time</th>
+                                                      <th class="text-center" style="line-height: 24px; font-size: 16px; border-bottom-width: 2px; border-bottom-color: #e2e8f0; border-bottom-style: solid; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 12px;" align="center" valign="top">Type</th>
+                                                      <th class="text-center" style="line-height: 24px; font-size: 16px; border-bottom-width: 2px; border-bottom-color: #e2e8f0; border-bottom-style: solid; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 12px;" align="center" valign="top">Height</th>
+                                                    </tr>
+                                                  </thead>
+                                                  <tbody>
+                                                    {% for tide in station.tides %}
+                                                    <tr>
+                                                      <td class="text-right" style="line-height: 24px; font-size: 16px; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 12px;" align="right" valign="top">{{ tide.time_str }}</td>
+                                                      <td class="text-center" style="line-height: 24px; font-size: 16px; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 12px;" align="center" valign="top">{{ tide.tide_type }}</td>
+                                                      <td class="text-right" style="line-height: 24px; font-size: 16px; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 12px;" align="right" valign="top">{{ tide.height_str }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                  </tbody>
+                                                </table>
                                               </div>
                                             </td>
                                           </tr>
@@ -205,7 +220,7 @@
                                 </tbody>
                               </table>
                               <div class="text-muted text-center" style="color: #718096;" align="center">
-                                Custom tide report generated with Pytide<br>
+                                Generated with Pytide<br>
                                 <a href="https://github.com/pfeif/pytide" style="color: #0d6efd;">https://github.com/pfeif/pytide</a>
                               </div>
                               <table class="s-6 w-full" role="presentation" border="0" cellpadding="0" cellspacing="0" style="width: 100%;" width="100%">
