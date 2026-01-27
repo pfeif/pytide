@@ -1,6 +1,6 @@
 # Project cache
 **/__pycache__
-**/.*_cache
+**/.*[_-]cache
 
 # Development environments
 **/.idea

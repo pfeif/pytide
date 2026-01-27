@@ -22,7 +22,7 @@
                     <img src="cid:{{ station.image.content_id.strip('<>') }}" alt="Map for {{ station.name }}" class="ax-center rounded-sm my-4">
                 </a>
                 <div class="ax-center space-y-1">
-                    {% for tide in station.tide_events %}
+                    {% for tide in station.tides %}
                     <p>{{ tide }}</p>
                     {% endfor %}
                 </div>

@@ -52,7 +52,7 @@ def create_message(source_dir: str, stations: list[Station], save_html: bool, sa
     for station in stations:
         attachments.append(station.image)
 
-    message = __compose_message('Your customized Pytide report', plain_text_body, html_body, attachments)
+    message = __compose_message('Daily Tide Report', plain_text_body, html_body, attachments)
 
     if save_email:
         output_path = os.path.join(source_dir, '..', 'message.eml')
