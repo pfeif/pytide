@@ -10,7 +10,7 @@
 <body>
     <div class="space-y-2">
         <div id="logo-container" class="container">
-            <img id="logo" class="ax-center my-10 w-48" src="cid:{{ logo_cid.strip('<>') }}" alt="Pytide logo">
+            <img id="logo" class="ax-center my-10 w-48" src="cid:{{ logo.content_id_normalized }}" alt="Pytide logo">
         </div>
 
         {% for station in tide_stations %}
@@ -19,12 +19,29 @@
                 <h3>ID# {{ station.id_ }}</h3>
                 <h4 class="text-muted pl-3">{{ station.name }}</h4>
                 <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}">
-                    <img src="cid:{{ station.image.content_id.strip('<>') }}" alt="Map for {{ station.name }}" class="ax-center rounded-sm my-4">
+                    <img src="cid:{{ station.image.content_id_normalized }}"
+                         alt="Map for {{ station.name }}"
+                         class="ax-center rounded-sm my-4">
                 </a>
                 <div class="ax-center space-y-1">
-                    {% for tide in station.tide_events %}
-                    <p>{{ tide }}</p>
-                    {% endfor %}
+                    <table class="table w-100">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Time</th>
+                                <th class="text-center">Type</th>
+                                <th class="text-center">Height</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tide in station.tides %}
+                            <tr>
+                                <td class="text-right">{{ tide.time_str }}</td>
+                                <td class="text-center">{{ tide.tide_type }}</td>
+                                <td class="text-right">{{ tide.height_str }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -32,7 +49,7 @@
 
         <div id="footer" class="container">
             <div class="text-muted text-center my-6">
-                Custom tide report generated with Pytide<br>
+                Generated with Pytide<br>
                 <a href="https://github.com/pfeif/pytide">https://github.com/pfeif/pytide</a>
             </div>
         </div>

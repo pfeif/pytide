@@ -7,6 +7,7 @@ from email.utils import make_msgid
 from typing import Any, ClassVar
 
 from pytide.models.image import Image
+from pytide.models.tide import Tide
 from pytide.repositories import maps, tides
 
 
@@ -24,7 +25,7 @@ class Station:
     name: str = field(default='')
     latitude: str = field(init=False)
     longitude: str = field(init=False)
-    tide_events: list[str] = field(default_factory=list, init=False)
+    tides: list[Tide] = field(default_factory=list[Tide], init=False)
     image: Image = field(init=False, repr=False)
 
     def __post_init__(self):
@@ -35,8 +36,8 @@ class Station:
     def __str__(self) -> str:
         output = f'ID# {self.id_}: {self.name} ({self.latitude}, {self.longitude})'
 
-        for tide in self.tide_events:
-            output += f'\n\t{tide}'
+        for tide in self.tides:
+            output += str(tide)
 
         return output
 
@@ -58,12 +59,9 @@ class Station:
         predictionary = tides.get_predictions_for_station(self.id_)
 
         for event in predictionary['predictions']:
-            date_time = event['t']  # 'YYYY-MM-DD HH:MM'
-            water_change = event['v']  # '1.234'
-            tide_type = 'High' if event['type'] == 'H' else 'Low'  # 'L' or 'H'
-            tide_string = f"{date_time} {tide_type} ({water_change}')"
+            tide = Tide.from_noaa_values(event['t'], event['type'], event['v'])
 
-            self.tide_events.append(tide_string)
+            self.tides.append(tide)
 
     def __add_map(self) -> None:
         """Add a static map image for the station."""

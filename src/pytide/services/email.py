@@ -38,7 +38,7 @@ def create_message(source_dir: str, stations: list[Station], save_html: bool, sa
         os.path.join(source_dir, 'templates'),
         'bootstrap-email-template.html',
         stations,
-        logo.content_id,
+        logo,
     )
 
     if save_html:
@@ -52,7 +52,7 @@ def create_message(source_dir: str, stations: list[Station], save_html: bool, sa
     for station in stations:
         attachments.append(station.image)
 
-    message = __compose_message('Your customized Pytide report', plain_text_body, html_body, attachments)
+    message = __compose_message('Daily Tide Report', plain_text_body, html_body, attachments)
 
     if save_email:
         output_path = os.path.join(source_dir, '..', 'message.eml')
@@ -87,14 +87,14 @@ def send_message(message: EmailMessage, recipients: set[str], smtp_settings: dic
             connection.send_message(message)
 
 
-def __render_template(templates_path: str, template_name: str, stations: list[Station], logo_cid: str) -> str:
+def __render_template(templates_path: str, template_name: str, stations: list[Station], logo: Image) -> str:
     """
     Return a rendered email template as an HTML string.
 
     :param str templates_path: The directory containing the template
     :param str template_name: The name of the template to render
     :param Station stations: The list of stations to render HTML for
-    :param str logo_cid: The content ID of the logo
+    :param Image logo_cid: The logo image
 
     :returns: The rendered HTML template
     :rtype: str
@@ -106,7 +106,7 @@ def __render_template(templates_path: str, template_name: str, stations: list[St
 
     email_template = jinja_env.get_template(template_name)
 
-    html_body = email_template.render(tide_stations=stations, logo_cid=logo_cid)
+    html_body = email_template.render(tide_stations=stations, logo=logo)
 
     return html_body
 
