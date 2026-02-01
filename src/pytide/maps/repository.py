@@ -33,7 +33,8 @@ def get_cached_map_image(db_id: int) -> GetCachedMapImageResponse | None:
     query = """
         SELECT image_bytes, content_id
         FROM map_image
-        WHERE station_id = ?;
+        WHERE station_id = ?
+            AND last_updated >= datetime('now', '-14 days');
     """
 
     with get_connection() as connection:
@@ -50,8 +51,13 @@ def get_cached_map_image(db_id: int) -> GetCachedMapImageResponse | None:
 def save_map_image(db_id: int, image: Image) -> None:
     command = """
         INSERT INTO map_image (station_id, image_bytes, content_id)
-        VALUES (?, ?, ?);
+        VALUES (?, ?, ?)
+        ON CONFLICT(station_id) DO UPDATE SET
+            image_bytes=excluded.image_bytes,
+            content_id=excluded.content_id,
+            last_updated=CURRENT_TIMESTAMP;
     """
 
     with get_connection() as connection:
-        connection.execute(command, (db_id, image.image, image.content_id))
+        with connection:
+            connection.execute(command, (db_id, image.image, image.content_id))

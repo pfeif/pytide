@@ -42,6 +42,7 @@ def get_cached_predictions(db_id: int, target_date: str) -> list[GetCachedPredic
             JOIN tide_type tt ON tt.id = t.type_id
         WHERE t.station_id = ?
             AND date(t.time) = ?
+            AND t.last_updated >= datetime('now', '-3 hours')
         ORDER BY t.time ASC;
     """
 
@@ -61,10 +62,18 @@ def get_cached_predictions(db_id: int, target_date: str) -> list[GetCachedPredic
 
 
 def save_predictions(db_id: int, tides: list[Tide]) -> None:
-    query = """
+    insert_command = """
         INSERT INTO tide(station_id, time, type_id, feet, inches)
         VALUES (?, ?, (SELECT id FROM tide_type WHERE type = ?), ?, ?)
-        ON CONFLICT(station_id, time) DO NOTHING;
+        ON CONFLICT(station_id, time) DO UPDATE SET
+            feet=excluded.feet,
+            inches=excluded.inches,
+            last_updated=CURRENT_TIMESTAMP;
+    """
+
+    delete_command = """
+        DELETE FROM tide
+        WHERE last_updated < datetime('now', '-1 day');
     """
 
     data = [
@@ -79,4 +88,6 @@ def save_predictions(db_id: int, tides: list[Tide]) -> None:
     ]
 
     with get_connection() as connection:
-        connection.executemany(query, data)
+        with connection:
+            connection.executemany(insert_command, data)
+            connection.execute(delete_command)

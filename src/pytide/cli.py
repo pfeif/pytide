@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 from platformdirs import user_config_dir
 
+from pytide.database.cache import delete_cache
 from pytide.email import service
 from pytide.maps.service import hydrate_map_image
 from pytide.metadata.service import hydrate_metadata
@@ -34,8 +35,20 @@ from pytide.predictions.service import hydrate_predictions
 )
 @click.option('--save-email', is_flag=True, help='Save the email message locally')
 @click.option('--save-html', is_flag=True, help='Save the HTML message body locally')
-def main(config_file: str, maps_api_key: str, send_email: bool, save_email: bool, save_html: bool) -> None:
-    config_path = Path(config_file) if config_file else find_default_config()
+@click.option('--clear-cache', is_flag=True, help='Delete the local cache database and exit')
+def main(
+    config_file: str,
+    maps_api_key: str,
+    send_email: bool,
+    save_email: bool,
+    save_html: bool,
+    clear_cache: bool,
+) -> None:
+    if clear_cache:
+        _delete_cache()
+        return
+
+    config_path = Path(config_file) if config_file else _find_default_config()
 
     if not config_path:
         raise click.UsageError('No configuration file found. Use --config-file or set PYTIDE_CONFIG_FILE.')
@@ -47,7 +60,6 @@ def main(config_file: str, maps_api_key: str, send_email: bool, save_email: bool
     with config_path.open(encoding='utf-8') as file:
         config.read_file(file)
 
-    # Set the user configuration settings.
     maps_api_key = maps_api_key if maps_api_key else config.get('GOOGLE MAPS API', 'key')
     stations: list[Station] = [Station(item[0], item[1]) for item in config.items('STATIONS')]
     recipients: set[str] = {item[0] for item in config.items('RECIPIENTS')}
@@ -64,7 +76,7 @@ def main(config_file: str, maps_api_key: str, send_email: bool, save_email: bool
         service.send_message(message, recipients, smtp_settings)
 
 
-def find_default_config() -> Path | None:
+def _find_default_config() -> Path | None:
     candidates: list[str | Path | None] = [
         os.environ.get('PYTIDE_CONFIG_FILE'),
         Path.cwd() / 'config.ini',
@@ -80,3 +92,12 @@ def find_default_config() -> Path | None:
             return path
 
     return None
+
+
+def _delete_cache() -> None:
+    cache_path, deleted = delete_cache()
+
+    if deleted:
+        click.echo(f'Successfully deleted cache at {cache_path}')
+    else:
+        click.echo(f'No cache found to delete at {cache_path}')

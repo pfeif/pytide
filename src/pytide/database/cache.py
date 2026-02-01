@@ -23,14 +23,24 @@ def get_connection() -> Iterator[sqlite3.Connection]:
 
         if not db_initialized:
             with connection:
-                _create_schema(connection)
+                _create_cache(connection)
 
         yield connection
     finally:
         connection.close()
 
 
-def _create_schema(connection: sqlite3.Connection) -> None:
+def delete_cache() -> tuple[Path, bool]:
+    cache_path = Path(user_data_dir('pytide')) / 'cache.db'
+
+    if cache_path.exists():
+        cache_path.unlink(missing_ok=True)
+        return cache_path, True
+
+    return cache_path, False
+
+
+def _create_cache(connection: sqlite3.Connection) -> None:
     create_script = """
         CREATE TABLE IF NOT EXISTS "station" (
             "id"            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,7 +71,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
 
         CREATE TABLE IF NOT EXISTS "map_image" (
             "id"            INTEGER PRIMARY KEY AUTOINCREMENT,
-            "station_id"    INTEGER NOT NULL,
+            "station_id"    INTEGER NOT NULL UNIQUE,
             "image_bytes"   BLOB NOT NULL,
             "content_id"    TEXT NOT NULL,
             "last_updated"  DATETIME DEFAULT CURRENT_TIMESTAMP,
