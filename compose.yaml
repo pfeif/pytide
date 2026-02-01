@@ -6,6 +6,10 @@ services:
       PYTIDE_CONFIG_FILE: /config/config.ini
     volumes:
       - ./config.ini:/config/config.ini:ro
+      - pytide_data:/root/.local/share/pytide
     build:
       context: .
       dockerfile: "./Dockerfile"
+
+volumes:
+  pytide_data:

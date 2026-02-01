@@ -9,9 +9,13 @@ from email.message import EmailMessage
 from pathlib import Path
 
 import click
+from platformdirs import user_config_dir
 
+from pytide.email import service
+from pytide.maps.service import hydrate_map_image
+from pytide.metadata.service import hydrate_metadata
 from pytide.models.station import Station
-from pytide.services import email
+from pytide.predictions.service import hydrate_predictions
 
 
 @click.command(context_settings={'auto_envvar_prefix': 'PYTIDE'})
@@ -19,7 +23,6 @@ from pytide.services import email
 @click.option(
     '--maps-api-key',
     show_envvar=True,
-    allow_from_autoenv=True,
     help='Your Google Maps Static API key (Overrides value in configuration file)',
 )
 @click.option(
@@ -27,20 +30,11 @@ from pytide.services import email
     'send_email',
     default=True,
     show_default=True,
-    allow_from_autoenv=True,
     help='Send the email to recipients',
 )
-@click.option('--save-email', is_flag=True, allow_from_autoenv=True, help='Save the email message locally')
-@click.option('--save-html', is_flag=True, allow_from_autoenv=True, help='Save the HTML message body locally')
+@click.option('--save-email', is_flag=True, help='Save the email message locally')
+@click.option('--save-html', is_flag=True, help='Save the HTML message body locally')
 def main(config_file: str, maps_api_key: str, send_email: bool, save_email: bool, save_html: bool) -> None:
-    """
-    Retrieve tide predictions for NOAA tide stations and email them to recipients.\f
-
-    :param str config_email: Optional configuration file.
-    :param bool send_email: Flag for sending email
-    :param bool save_email: Flag for saving email message locally
-    :param bool save_html: Flag for saving HTML email message body locally
-    """
     config_path = Path(config_file) if config_file else find_default_config()
 
     if not config_path:
@@ -48,36 +42,33 @@ def main(config_file: str, maps_api_key: str, send_email: bool, save_email: bool
 
     config_path = config_path.expanduser().resolve()
 
-    # Allow the user to exclude station names in the config.
     config = ConfigParser(allow_no_value=True, empty_lines_in_values=False)
 
     with config_path.open(encoding='utf-8') as file:
         config.read_file(file)
 
     # Set the user configuration settings.
-    Station.api_key = maps_api_key if maps_api_key else config.get('GOOGLE MAPS API', 'key')
+    maps_api_key = maps_api_key if maps_api_key else config.get('GOOGLE MAPS API', 'key')
     stations: list[Station] = [Station(item[0], item[1]) for item in config.items('STATIONS')]
     recipients: set[str] = {item[0] for item in config.items('RECIPIENTS')}
     smtp_settings = dict(config.items('SMTP SERVER'))
 
-    package_root = Path(__file__).resolve().parent
+    for station in stations:
+        hydrate_metadata(station)
+        hydrate_predictions(station)
+        hydrate_map_image(station, maps_api_key)
 
-    # Craft a single HTML message body for use in all messages.
-    message: EmailMessage = email.create_message(package_root.as_posix(), stations, save_html, save_email)
+    message: EmailMessage = service.create_message(stations, save_html, save_email)
 
     if send_email:
-        email.send_message(message, recipients, smtp_settings)
+        service.send_message(message, recipients, smtp_settings)
 
 
 def find_default_config() -> Path | None:
-    """
-    Search for a configuration file in well-known locations.
-    """
     candidates: list[str | Path | None] = [
         os.environ.get('PYTIDE_CONFIG_FILE'),
         Path.cwd() / 'config.ini',
-        Path.home() / '.config' / 'pytide' / 'config.ini',
-        Path('/etc/pytide/config.ini'),
+        Path(user_config_dir('pytide')) / 'config.ini',
     ]
 
     for candidate in candidates:

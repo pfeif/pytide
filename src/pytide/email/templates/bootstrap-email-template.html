@@ -101,7 +101,7 @@
                                 <tbody>
                                   <tr>
                                     <td style="line-height: 24px; font-size: 16px; width: 100%; margin: 0; padding: 16px;" align="left" bgcolor="#FFFFFF">
-                                      <h3 style="padding-top: 0; padding-bottom: 0; font-weight: 500; vertical-align: baseline; font-size: 28px; line-height: 33.6px; margin: 0;" align="left">ID# {{ station.id_ }}</h3>
+                                      <h3 style="padding-top: 0; padding-bottom: 0; font-weight: 500; vertical-align: baseline; font-size: 28px; line-height: 33.6px; margin: 0;" align="left">ID# {{ station.noaa_id }}</h3>
                                       <table class="pl-3" role="presentation" border="0" cellpadding="0" cellspacing="0">
                                         <tbody>
                                           <tr>
@@ -125,7 +125,7 @@
                                           <tbody>
                                             <tr>
                                               <td style="line-height: 24px; font-size: 16px; margin: 0;" align="left">
-                                                <img src="cid:{{ station.image.content_id_normalized }}" alt="Map for {{ station.name }}" class="rounded-sm" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; border-radius: 2px; border-style: none; border-width: 0;">
+                                                <img src="cid:{{ station.map_image.content_id_normalized }}" alt="Map for {{ station.name }}" class="rounded-sm" style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; border-radius: 2px; border-style: none; border-width: 0;">
                                               </td>
                                             </tr>
                                           </tbody>
