@@ -14,12 +14,12 @@
         </div>
 
         {% for station in tide_stations %}
-        <div id="{{ station.id_ }}-container" class="container">
+        <div id="{{ station.noaa_id }}-container" class="container">
             <div class="card p-4">
-                <h3>ID# {{ station.id_ }}</h3>
+                <h3>ID# {{ station.noaa_id }}</h3>
                 <h4 class="text-muted pl-3">{{ station.name }}</h4>
                 <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}">
-                    <img src="cid:{{ station.image.content_id_normalized }}"
+                    <img src="cid:{{ station.map_image.content_id_normalized }}"
                          alt="Map for {{ station.name }}"
                          class="ax-center rounded-sm my-4">
                 </a>

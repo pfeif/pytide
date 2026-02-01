@@ -1,10 +1,6 @@
-"""
-Functions for creating and sending emails
-"""
-
-import os
 from email.message import EmailMessage
 from email.utils import make_msgid
+from pathlib import Path
 from smtplib import SMTP
 
 from jinja2 import Environment, FileSystemLoader
@@ -13,21 +9,10 @@ from pytide.models.image import Image
 from pytide.models.station import Station
 
 
-def create_message(source_dir: str, stations: list[Station], save_html: bool, save_email: bool) -> EmailMessage:
-    """
-    Return one EmailMessage containing data from each station in stations.
+def create_message(stations: list[Station], save_html: bool, save_email: bool) -> EmailMessage:
+    current_folder = Path(__file__).parent
 
-    :param str source_dir: The root of the source code directory
-    :param list[Station] stations: The list of stations used to populate the email
-    :param bool save_html: Whether to save the email body HTML locally
-    :param bool save_email: Whether to save the email message locally
-
-    :returns: The email message without sender or recipient information
-    :rtype: EmailMessage
-    """
-    logo_path = os.path.join(source_dir, 'assets', 'img', 'logo-192.png')
-
-    with open(logo_path, 'rb') as file:
+    with open(current_folder / 'assets' / 'img' / 'logo-192.png', 'rb') as file:
         logo_image = file.read()
 
     logo = Image(logo_image, make_msgid('pytide-logo'))
@@ -35,46 +20,36 @@ def create_message(source_dir: str, stations: list[Station], save_html: bool, sa
     plain_text_body = '\n\n'.join(str(station) for station in stations)
 
     html_body: str = __render_template(
-        os.path.join(source_dir, 'templates'),
+        current_folder / 'templates',
         'bootstrap-email-template.html',
         stations,
         logo,
     )
 
-    if save_html:
-        output_path = os.path.join(source_dir, '..', 'message.html')
+    project_root = current_folder.parents[2]
 
-        with open(output_path, mode='wt', encoding='utf-8') as file:
-            file.writelines(html_body)
+    if save_html:
+        output_path = project_root / 'message.html'
+        output_path.write_text(html_body, encoding='utf-8')
 
     attachments = [logo]
 
     for station in stations:
-        attachments.append(station.image)
+        attachments.append(station.map_image)
 
     message = __compose_message('Daily Tide Report', plain_text_body, html_body, attachments)
 
     if save_email:
-        output_path = os.path.join(source_dir, '..', 'message.eml')
-
-        with open(output_path, mode='wt', encoding='utf-8') as file:
-            file.writelines(message.as_string())
+        output_path = project_root / 'message.eml'
+        output_path.write_text(message.as_string(), encoding='utf-8')
 
     return message
 
 
 def send_message(message: EmailMessage, recipients: set[str], smtp_settings: dict[str, str]) -> None:
-    """
-    Send message to each recipient in recipients using smtp_settings.
-
-    :param EmailMessage message: The message to send
-    :param set[str] recipients: The message recipients
-    :param dict[str, str] smtp_settings: The user's email server settings
-    """
     message['From'] = smtp_settings['sender']
 
     with SMTP(smtp_settings['host'], int(smtp_settings['port'])) as connection:
-        # Enter TLS mode. Everything from here, on is encrypted.
         connection.starttls()
         connection.login(smtp_settings['user'], smtp_settings['password'])
 
@@ -87,28 +62,12 @@ def send_message(message: EmailMessage, recipients: set[str], smtp_settings: dic
             connection.send_message(message)
 
 
-def __render_template(templates_path: str, template_name: str, stations: list[Station], logo: Image) -> str:
-    """
-    Return a rendered email template as an HTML string.
-
-    :param str templates_path: The directory containing the template
-    :param str template_name: The name of the template to render
-    :param Station stations: The list of stations to render HTML for
-    :param Image logo_cid: The logo image
-
-    :returns: The rendered HTML template
-    :rtype: str
-    """
-    jinja_env = Environment(
-        loader=FileSystemLoader(templates_path),  # sets the templates directory
-        autoescape=True,  # prevents cross-site scripting
-    )
+def __render_template(templates_path: Path, template_name: str, stations: list[Station], logo: Image) -> str:
+    jinja_env = Environment(loader=FileSystemLoader(templates_path), autoescape=True)
 
     email_template = jinja_env.get_template(template_name)
 
-    html_body = email_template.render(tide_stations=stations, logo=logo)
-
-    return html_body
+    return email_template.render(tide_stations=stations, logo=logo)
 
 
 def __compose_message(subject: str, plain_text: str, html_body: str, image_attachments: list[Image]) -> EmailMessage:
