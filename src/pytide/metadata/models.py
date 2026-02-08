@@ -7,6 +7,9 @@ class GetCachedMetadataResponse:
     name: str
     latitude: float
     longitude: float
+    time_zone: str
+    utc_offset: int
+    observes_dst: bool
 
 
 @dataclass
@@ -15,6 +18,9 @@ class FetchNoaaMetadataResponse:
     name: str
     latitude: float
     longitude: float
+    time_zone: str
+    utc_offset: int
+    observes_dst: bool
 
 
 @dataclass
@@ -23,3 +29,6 @@ class SaveMetadataRequest:
     name: str
     latitude: float
     longitude: float
+    time_zone: str
+    utc_offset: int
+    observes_dst: bool

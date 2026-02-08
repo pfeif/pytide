@@ -16,6 +16,9 @@ def hydrate_metadata(station: Station) -> None:
             station.name = cached_metadata.name
         station.latitude = cached_metadata.latitude
         station.longitude = cached_metadata.longitude
+        station.time_zone = cached_metadata.time_zone
+        station.utc_offset = cached_metadata.utc_offset
+        station.observes_dst = cached_metadata.observes_dst
     else:
         raise ValueError(f'Metadata for station ID {station.noaa_id} could not be found.')
 
@@ -23,6 +26,17 @@ def hydrate_metadata(station: Station) -> None:
 def update_metadata_cache() -> None:
     metadata = fetch_noaa_metadata()
 
-    values = [SaveMetadataRequest(datum.noaa_id, datum.name, datum.latitude, datum.longitude) for datum in metadata]
+    values = [
+        SaveMetadataRequest(
+            datum.noaa_id,
+            datum.name,
+            datum.latitude,
+            datum.longitude,
+            datum.time_zone,
+            datum.utc_offset,
+            datum.observes_dst,
+        )
+        for datum in metadata
+    ]
 
     save_metadata(values)

@@ -14,10 +14,13 @@ def fetch_noaa_metadata() -> list[FetchNoaaMetadataResponse]:
 
         return [
             FetchNoaaMetadataResponse(
-                station['id'],
-                station['name'],
-                round(station['lat'], 6),
-                round(station['lng'], 6),
+                noaa_id=station['id'],
+                name=station['name'],
+                latitude=round(station['lat'], 6),
+                longitude=round(station['lng'], 6),
+                time_zone=station['timezone'],
+                utc_offset=station['timezonecorr'],
+                observes_dst=station['observedst']
             )
             for station in stations
         ]

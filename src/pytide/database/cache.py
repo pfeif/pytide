@@ -48,6 +48,9 @@ def _create_cache(connection: sqlite3.Connection) -> None:
             "name"          TEXT,
             "latitude"      REAL,
             "longitude"     REAL,
+            "time_zone"     TEXT,
+            "utc_offset"    INTEGER,
+            "observes_dst"  BIT,
             "last_updated"  DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 

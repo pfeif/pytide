@@ -39,6 +39,9 @@ def get_cached_metadata(noaa_id: str) -> GetCachedMetadataResponse | None:
                 row['name'],
                 row['latitude'],
                 row['longitude'],
+                row['time_zone'],
+                row['utc_offset'],
+                row['observes_dst'],
             )
             if row
             else None
@@ -47,16 +50,30 @@ def get_cached_metadata(noaa_id: str) -> GetCachedMetadataResponse | None:
 
 def save_metadata(requests: list[SaveMetadataRequest]) -> None:
     command = """
-        INSERT INTO station(noaa_id, name, latitude, longitude)
-        VALUES(?, ?, ?, ?)
+        INSERT INTO station(noaa_id, name, latitude, longitude, time_zone, utc_offset, observes_dst)
+        VALUES(?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(noaa_id) DO UPDATE SET
             name=excluded.name,
             latitude=excluded.latitude,
             longitude=excluded.longitude,
+            time_zone=excluded.time_zone,
+            utc_offset=excluded.utc_offset,
+            observes_dst=excluded.observes_dst,
             last_updated=CURRENT_TIMESTAMP
     """
 
-    data = [(request.noaa_id, request.name, request.latitude, request.longitude) for request in requests]
+    data = [
+        (
+            request.noaa_id,
+            request.name,
+            request.latitude,
+            request.longitude,
+            request.time_zone,
+            request.utc_offset,
+            request.observes_dst,
+        )
+        for request in requests
+    ]
 
     with get_connection() as connection:
         with connection:
