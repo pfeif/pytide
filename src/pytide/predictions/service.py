@@ -2,7 +2,8 @@ from datetime import datetime
 
 from pytide.models.station import Station
 from pytide.models.tide import Measurement, Tide
-from pytide.predictions.repository import get_cached_predictions, fetch_noaa_predictions, save_predictions
+from pytide.predictions.client import fetch_noaa_predictions
+from pytide.predictions.repository import get_cached_predictions, save_predictions
 
 
 def hydrate_predictions(station: Station) -> None:

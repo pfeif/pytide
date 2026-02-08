@@ -1,11 +1,8 @@
 from email.utils import make_msgid
 
-from pytide.maps.repository import (
-    FetchGoogleMapImageRequest,
-    get_cached_map_image,
-    fetch_google_map_image,
-    save_map_image,
-)
+from pytide.maps.client import fetch_google_map_image
+from pytide.maps.models import FetchGoogleMapImageRequest
+from pytide.maps.repository import get_cached_map_image, save_map_image
 from pytide.models.image import Image
 from pytide.models.station import Station
 

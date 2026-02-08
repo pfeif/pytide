@@ -1,40 +1,10 @@
 import sqlite3
 
-import requests
-from requests import RequestException
-
 from pytide.database.cache import get_connection
 from pytide.models.tide import Tide
-from pytide.predictions.models import FetchNoaaPredictionsResponse, GetCachedPredictionsResponse
+from pytide.predictions.models import GetCachedPredictionsResponse
 
 CACHE_EXPIRATION = '-3 hours'
-
-
-def fetch_noaa_predictions(station_id: str) -> list[FetchNoaaPredictionsResponse]:
-    api_url = 'https://api.tidesandcurrents.noaa.gov/api/prod/datagetter'
-
-    parameters = {
-        'station': station_id,
-        'date': 'today',
-        'product': 'predictions',
-        'datum': 'MLLW',
-        'units': 'english',
-        'time_zone': 'lst_ldt',
-        'format': 'json',
-        'interval': 'hilo',
-        'application': 'Pytide: https://github.com/pfeif/pytide',
-    }
-
-    try:
-        response = requests.get(api_url, params=parameters, timeout=10)
-        response.raise_for_status()
-
-        tide_events = response.json()['predictions']
-
-        return [FetchNoaaPredictionsResponse(event['t'], event['type'], event['v']) for event in tide_events]
-
-    except RequestException as error:
-        raise SystemExit(f'Unable to retrieve tide predictions -> {error}') from error
 
 
 def get_cached_predictions(db_id: int, target_date: str) -> list[GetCachedPredictionsResponse]:
