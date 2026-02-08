@@ -9,6 +9,6 @@ class GetCachedMapImageResponse:
 
 @dataclass
 class FetchGoogleMapImageRequest:
-    latitude: str
-    longitude: str
+    latitude: float
+    longitude: float
     api_key: str
