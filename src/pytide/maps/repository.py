@@ -3,15 +3,17 @@ import sqlite3
 import requests
 
 from pytide.database.cache import get_connection
-from pytide.maps.models import GetCachedMapImageResponse, FetchGoogleMapImageRequest
+from pytide.maps.models import FetchGoogleMapImageRequest, GetCachedMapImageResponse
 from pytide.models.image import Image
+
+CACHE_EXPIRATION = '-14 days'
 
 
 def fetch_google_map_image(request: FetchGoogleMapImageRequest) -> bytes | None:
     api_url = 'https://maps.googleapis.com/maps/api/staticmap'
 
     parameters = {
-        'markers': f'{request.latitude},{request.longitude}',
+        'markers': f'{str(request.latitude)},{str(request.longitude)}',
         'size': '320x280',
         'scale': '1',
         'zoom': '15',
@@ -30,11 +32,11 @@ def fetch_google_map_image(request: FetchGoogleMapImageRequest) -> bytes | None:
 
 
 def get_cached_map_image(db_id: int) -> GetCachedMapImageResponse | None:
-    query = """
+    query = f"""
         SELECT image_bytes, content_id
         FROM map_image
         WHERE station_id = ?
-            AND last_updated >= datetime('now', '-14 days');
+            AND last_updated >= datetime('now', '{CACHE_EXPIRATION}');
     """
 
     with get_connection() as connection:

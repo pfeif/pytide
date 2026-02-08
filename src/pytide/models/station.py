@@ -9,8 +9,8 @@ class Station:
     noaa_id: str
     db_id: int = field(init=False, repr=False)
     name: str = field(default='')
-    latitude: str = field(init=False)
-    longitude: str = field(init=False)
+    latitude: float = field(init=False)
+    longitude: float = field(init=False)
     tides: list[Tide] = field(default_factory=list[Tide], init=False)
     map_image: Image = field(init=False, repr=False)
 

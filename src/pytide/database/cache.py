@@ -18,7 +18,6 @@ def get_connection() -> Iterator[sqlite3.Connection]:
 
     try:
         connection.execute('PRAGMA foreign_keys = ON;')
-        connection.execute('PRAGMA journal_mode = WAL;')
         connection.execute('PRAGMA synchronous = NORMAL;')
 
         if not db_initialized:
@@ -33,11 +32,12 @@ def get_connection() -> Iterator[sqlite3.Connection]:
 def delete_cache() -> tuple[Path, bool]:
     cache_path = Path(user_data_dir('pytide')) / 'cache.db'
 
-    if cache_path.exists():
-        cache_path.unlink(missing_ok=True)
-        return cache_path, True
+    path_exists = cache_path.exists()
 
-    return cache_path, False
+    if path_exists:
+        cache_path.unlink(missing_ok=True)
+
+    return cache_path, path_exists
 
 
 def _create_cache(connection: sqlite3.Connection) -> None:
@@ -46,8 +46,8 @@ def _create_cache(connection: sqlite3.Connection) -> None:
             "id"            INTEGER PRIMARY KEY AUTOINCREMENT,
             "noaa_id"       TEXT NOT NULL UNIQUE,
             "name"          TEXT,
-            "latitude"      TEXT,
-            "longitude"     TEXT,
+            "latitude"      REAL,
+            "longitude"     REAL,
             "last_updated"  DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -61,10 +61,10 @@ def _create_cache(connection: sqlite3.Connection) -> None:
             "station_id"    INTEGER NOT NULL,
             "time"          TEXT NOT NULL,
             "type_id"       INTEGER NOT NULL,
-            "feet"          NUMERIC NOT NULL,
-            "inches"        NUMERIC NOT NULL,
+            "feet"          INT NOT NULL,
+            "inches"        REAL NOT NULL,
             "last_updated"  DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY("station_id") REFERENCES "station"("id"),
+            FOREIGN KEY("station_id") REFERENCES "station"("id") ON DELETE CASCADE,
             FOREIGN KEY("type_id") REFERENCES "tide_type"("id"),
             UNIQUE("station_id", "time")
         );
@@ -75,11 +75,13 @@ def _create_cache(connection: sqlite3.Connection) -> None:
             "image_bytes"   BLOB NOT NULL,
             "content_id"    TEXT NOT NULL,
             "last_updated"  DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY("station_id") REFERENCES "station"("id")
+            FOREIGN KEY("station_id") REFERENCES "station"("id") ON DELETE CASCADE
         );
 
-        CREATE INDEX IF NOT EXISTS idx_tide_station_id ON tide(station_id, time);
-
+        CREATE INDEX IF NOT EXISTS idx_tide_station_id ON tide(station_id);
+        CREATE INDEX IF NOT EXISTS idx_tide_type_id ON tide(type_id);
+        CREATE INDEX IF NOT EXISTS idx_tide_last_updated ON tide(last_updated);
+        CREATE INDEX IF NOT EXISTS idx_map_image_station_id ON map_image(station_id);
         CREATE INDEX IF NOT EXISTS idx_tide_time ON tide(time);
         """
 
@@ -90,5 +92,6 @@ def _create_cache(connection: sqlite3.Connection) -> None:
             (2, 'Low');
     """
 
+    connection.execute('PRAGMA journal_mode = WAL;')
     connection.executescript(create_script)
     connection.executescript(seed_script)

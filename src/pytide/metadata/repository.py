@@ -3,7 +3,9 @@ import sqlite3
 import requests
 
 from pytide.database.cache import get_connection
-from pytide.metadata.models import GetCachedMetadataResponse, FetchNoaaMetadataResponse, SaveMetadataRequest
+from pytide.metadata.models import FetchNoaaMetadataResponse, GetCachedMetadataResponse, SaveMetadataRequest
+
+CACHE_EXPIRATION = '-7 days'
 
 
 def fetch_noaa_metadata() -> list[FetchNoaaMetadataResponse]:
@@ -19,8 +21,8 @@ def fetch_noaa_metadata() -> list[FetchNoaaMetadataResponse]:
             FetchNoaaMetadataResponse(
                 station['id'],
                 station['name'],
-                str(round(station['lat'], 6)),
-                str(round(station['lng'], 6)),
+                round(station['lat'], 6),
+                round(station['lng'], 6),
             )
             for station in stations
         ]
@@ -30,11 +32,11 @@ def fetch_noaa_metadata() -> list[FetchNoaaMetadataResponse]:
 
 
 def cache_is_fresh() -> bool:
-    query = """
+    query = f"""
         SELECT EXISTS(
             SELECT 1
             FROM station
-            WHERE last_updated >= datetime('now', '-7 days')
+            WHERE last_updated >= datetime('now', '{CACHE_EXPIRATION}')
         );
     """
 
@@ -44,11 +46,11 @@ def cache_is_fresh() -> bool:
 
 
 def get_cached_metadata(noaa_id: str) -> GetCachedMetadataResponse | None:
-    query = """
+    query = f"""
         SELECT *
         FROM station
         WHERE noaa_id = ?
-            AND last_updated >= datetime('now', '-7 days');
+            AND last_updated >= datetime('now', '{CACHE_EXPIRATION}');
     """
 
     with get_connection() as connection:

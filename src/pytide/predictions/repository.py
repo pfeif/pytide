@@ -5,7 +5,9 @@ from requests import RequestException
 
 from pytide.database.cache import get_connection
 from pytide.models.tide import Tide
-from pytide.predictions.models import GetCachedPredictionsResponse, FetchNoaaPredictionsResponse
+from pytide.predictions.models import FetchNoaaPredictionsResponse, GetCachedPredictionsResponse
+
+CACHE_EXPIRATION = '-3 hours'
 
 
 def fetch_noaa_predictions(station_id: str) -> list[FetchNoaaPredictionsResponse]:
@@ -36,13 +38,13 @@ def fetch_noaa_predictions(station_id: str) -> list[FetchNoaaPredictionsResponse
 
 
 def get_cached_predictions(db_id: int, target_date: str) -> list[GetCachedPredictionsResponse]:
-    query = """
+    query = f"""
         SELECT t.time, tt.type, t.feet, t.inches
         FROM tide t
             JOIN tide_type tt ON tt.id = t.type_id
         WHERE t.station_id = ?
             AND date(t.time) = ?
-            AND t.last_updated >= datetime('now', '-3 hours')
+            AND t.last_updated >= datetime('now', '{CACHE_EXPIRATION}')
         ORDER BY t.time ASC;
     """
 
