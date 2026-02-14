@@ -61,8 +61,8 @@ application. You must sign up for the service and provide your own API key in or
 images.
 
 This is not a free service. However, for personal use cases, you are very unlikely to make enough
-API queries to get charged. Last I checked, it would take roughly 100,000 map images retrieved
-before charges are incurred.
+API queries to get charged. Last I checked, you are permitted 10,000 map images retrieved
+before charges are incurred. That's ~322 requests per day.
 
 Follow the instructions in [`config.ini`](./config.ini).
 

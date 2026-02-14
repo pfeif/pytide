@@ -8,50 +8,78 @@
 </head>
 
 <body>
-    <div class="space-y-2">
-        <div id="logo-container" class="container">
-            <img id="logo" class="ax-center my-10 w-48" src="cid:{{ logo.content_id_normalized }}" alt="Pytide logo">
-        </div>
+    <div id="logo-container" class="container">
+        <img id="logo" class="ax-center my-10 w-48" src="cid:{{ logo.content_id_normalized }}" alt="Pytide logo">
+    </div>
 
-        {% for station in tide_stations %}
-        <div id="{{ station.noaa_id }}-container" class="container">
-            <div class="card p-4">
-                <h3>ID# {{ station.noaa_id }}</h3>
-                <h4 class="text-muted pl-3">{{ station.name }}</h4>
-                <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}">
-                    <img src="cid:{{ station.map_image.content_id_normalized }}"
-                         alt="Map for {{ station.name }}"
-                         class="ax-center rounded-sm my-4">
-                </a>
-                <div class="ax-center space-y-1">
-                    <table class="table w-100">
-                        <thead>
-                            <tr>
-                                <th class="text-center">Time</th>
-                                <th class="text-center">Type</th>
-                                <th class="text-center">Height</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for tide in station.tides %}
-                            <tr>
-                                <td class="text-right">{{ tide.time_str }}</td>
-                                <td class="text-center">{{ tide.tide_type }}</td>
-                                <td class="text-right">{{ tide.height_str }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+    {% for station in tide_stations %}
+    <div id="{{ station.noaa_id }}-container" class="container my-2">
+        <div class="card p-4">
+            <h3>{{ station.name }}</h3>
+            <h4 class="text-muted pl-3">ID# {{ station.noaa_id }}</h4>
+            <a href="https://www.google.com/maps/search/?api=1&query={{ station.latitude }},{{ station.longitude }}">
+                <img src="cid:{{ station.map_image.content_id_normalized }}"
+                     alt="Map for {{ station.noaa_id}}"
+                     class="ax-center rounded-sm my-4 border">
+            </a>
+            <div id="{{ station.noaa_id }}-prediction-data" class="mt-3">
+                <table class="table table-sm">
+                    <thead class="text-muted">
+                        <tr>
+                            <th class="text-center"><small>TIME</small></th>
+                            <th class="text-center"><small>TYPE</small></th>
+                            <th class="text-center"><small>HEIGHT</small></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tide in station.tides %}
+                        <tr>
+                            <td class="text-center">{{ tide.time_str }}</td>
+                            <td class="text-center">{{ tide.tide_type }}</td>
+                            <td class="text-center">{{ tide.height_str }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div id="{{ station.noaa_id }}-astronomical-data" class="mt-3">
+                <table class="table table-sm">
+                    <thead class="text-muted">
+                        <tr>
+                            <th colspan="2" class="text-center">
+                                <small>&#9728;&#65039; SUN</small>
+                            </th>
+                            <th colspan="2" class="text-center">
+                                <small>{{ station.lunar_events.phase_image | safe }} MOON: {{ station.lunar_events.phase_name }}</small>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="text-right">
+                                <span class="text-muted">↑</span> {{ station.format_time(station.solar_events.rise) }}
+                            </td>
+                            <td class="text-left">
+                                <span class="text-muted">↓</span> {{ station.format_time(station.solar_events.set_) }}
+                            </td>
+                            <td class="text-right">
+                                <span class="text-muted">↑</span> {{ station.format_time(station.lunar_events.rise) }}
+                            </td>
+                            <td class="text-left">
+                                <span class="text-muted">↓</span> {{ station.format_time(station.lunar_events.set_) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-        {% endfor %}
+    </div>
+    {% endfor %}
 
-        <div id="footer" class="container">
-            <div class="text-muted text-center my-6">
-                Generated with Pytide<br>
-                <a href="https://github.com/pfeif/pytide">https://github.com/pfeif/pytide</a>
-            </div>
+    <div id="footer" class="container">
+        <div class="text-muted text-center my-6">
+            Generated with Pytide<br>
+            <a href="https://github.com/pfeif/pytide">https://github.com/pfeif/pytide</a>
         </div>
     </div>
 </body>
