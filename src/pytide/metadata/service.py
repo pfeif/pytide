@@ -1,10 +1,6 @@
-from pytide.metadata.repository import (
-    SaveMetadataRequest,
-    cache_is_fresh,
-    get_cached_metadata,
-    fetch_noaa_metadata,
-    save_metadata,
-)
+from pytide.metadata.client import fetch_noaa_metadata
+from pytide.metadata.models import SaveMetadataRequest
+from pytide.metadata.repository import cache_is_fresh, get_cached_metadata, save_metadata
 from pytide.models.station import Station
 
 
