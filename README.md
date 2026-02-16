@@ -71,63 +71,77 @@ command line option or by specifying a `PYTIDE_MAPS_API_KEY` environment variabl
 
 ## Usage
 
+### [uv][uv] (Recommended)
+
+1. Install the dependencies.
+
+    ```sh
+    uv sync --no-dev
+    ```
+
+1. Run the application.
+
+    ```sh
+    uv run pytide
+    ```
+
+1. Optionally, pass a configuration file explicitly.
+
+    ```sh
+    uv run pytide --config-file /path/to/config.ini
+    ```
+
 ### [System Python][python]
+
+1. (Recommended): Create and activate a virtual environment.
+
+    - Linux or macOS
+
+        ```sh
+        python3 -m venv .venv
+        source .venv/bin/activate
+        python -m pip install --upgrade pip
+        ```
+
+    - Windows (PowerShell)
+
+        ```pwsh
+        python -m venv .venv
+        ./.venv/Scripts/Activate.ps1
+        python -m pip install --upgrade pip
+        ```
+
+    - Windows (Command Prompt)
+        
+        ```cmd
+        python -m venv .venv
+        .venv\Scripts\activate
+        python -m pip install --upgrade pip
+        ```
 
 1. Install the package.
 
-    ```text
+    ```sh
     pip install .
     ```
 
 1. Run the application using the default configuration file.
 
-    ```text
+    ```sh
     pytide
     ```
 
 1. Optionally, pass a configuration file explicitly.
 
-    ```text
+    ```sh
     pytide --config-file /path/to/config.ini
     ```
 
 You may also run pytide as a module.
 
-```text
+```sh
 python -m pytide
 ```
-
-### [uv][uv]
-
-1. Install the dependencies.
-
-    ```text
-    uv sync
-    ```
-
-1. Run the application.
-
-    ```text
-    uv run pytide
-    ```
-
-1. If needed, specify the configuration file.
-
-    ```text
-    uv run pytide --config-file /path/to/config.ini
-    ```
-
-### [Docker][docker]
-
-1. Ensure a config.ini file exists on the host system.
-1. Run the container using Docker Compose.
-
-    ```text
-    docker compose up --detach
-    ```
-
-The provided [`compose.yaml`](./compose.yaml) mounts the configuration file into the container and
-sets the required environment variable so Pytide can locate it.
 
 ## License
 
