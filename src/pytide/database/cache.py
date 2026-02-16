@@ -3,14 +3,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
-from platformdirs import user_data_dir
+from platformdirs import user_cache_path
 
 
 @contextmanager
 def get_connection() -> Iterator[sqlite3.Connection]:
-    data_path = Path(user_data_dir('pytide'))
-    data_path.mkdir(parents=True, exist_ok=True)
-    db_file = data_path / 'cache.db'
+    cache_path = _get_cache_path()
+    cache_path.mkdir(parents=True, exist_ok=True)
+    db_file = cache_path / 'cache.db'
 
     db_initialized = db_file.exists()
 
@@ -30,14 +30,18 @@ def get_connection() -> Iterator[sqlite3.Connection]:
 
 
 def delete_cache() -> tuple[Path, bool]:
-    cache_path = Path(user_data_dir('pytide')) / 'cache.db'
+    cache_db_path = _get_cache_path() / 'cache.db'
 
-    path_exists = cache_path.exists()
+    path_exists = cache_db_path.exists()
 
     if path_exists:
-        cache_path.unlink(missing_ok=True)
+        cache_db_path.unlink(missing_ok=True)
 
-    return cache_path, path_exists
+    return cache_db_path, path_exists
+
+
+def _get_cache_path() -> Path:
+    return user_cache_path(appname='pytide', appauthor=False)
 
 
 def _create_cache(connection: sqlite3.Connection) -> None:
