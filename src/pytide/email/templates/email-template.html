@@ -34,9 +34,9 @@
                     <tbody>
                         {% for tide in station.tides %}
                         <tr>
-                            <td class="text-center">{{ tide.time_str }}</td>
+                            <td class="text-center">{{ tide.time }}</td>
                             <td class="text-center">{{ tide.tide_type }}</td>
-                            <td class="text-center">{{ tide.height_str }}</td>
+                            <td class="text-center">{{ tide.height }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

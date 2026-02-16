@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class GetCachedPredictionsResponse:
     time: str
     type: str
+    above_mean: bool
     feet: int
     inches: float
 

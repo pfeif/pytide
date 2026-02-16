@@ -16,7 +16,7 @@ def hydrate_predictions(station: Station) -> None:
             Tide(
                 datetime.strptime(prediction.time, '%Y-%m-%d %H:%M:%S'),
                 prediction.type,
-                Measurement(prediction.feet, prediction.inches),
+                Measurement(prediction.above_mean, prediction.feet, prediction.inches),
             )
             for prediction in cached_predictions
         ]

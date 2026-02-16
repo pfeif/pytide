@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from datetime import datetime
-import math
 from typing import NamedTuple
 
 INCHES_PER_FOOT = 12
 
 
 class Measurement(NamedTuple):
+    above_mean: bool
     feet: int
     inches: float
 
@@ -18,26 +18,29 @@ class Tide:
     water_level_change: Measurement
 
     def __str__(self) -> str:
-        return f'{self.tide_type} tide at {self.time_str} ({self.height_str})'
+        return f'{self.tide_type} tide at {self.time} ({self.height})'
 
     @classmethod
-    def from_noaa_values(cls, time: str, type: str, change: str) -> 'Tide':
+    def from_noaa_values(cls, time: str, type_: str, change: str) -> 'Tide':
         event_time = datetime.strptime(time, '%Y-%m-%d %H:%M')
-        tide_type = 'High' if type == 'H' else 'Low'
-        total_inches = round(float(change) * INCHES_PER_FOOT, 3)
-        feet = math.trunc(total_inches / INCHES_PER_FOOT)
-        inches = math.fmod(total_inches, INCHES_PER_FOOT)
+        tide_type = 'High' if type_ == 'H' else 'Low'
 
-        return cls(event_time, tide_type, Measurement(feet, inches))
+        combined = float(change)
+        above_mean = combined >= 0
+        absolute = abs(combined)
+        feet = int(absolute)
+        inches = round((absolute - feet) * INCHES_PER_FOOT, 1)
+
+        return cls(event_time, tide_type, Measurement(above_mean, feet, inches))
 
     @property
-    def time_str(self) -> str:
+    def time(self) -> str:
         return self.event_time.strftime('%I:%M %p').lstrip('0')
 
     @property
-    def height_str(self) -> str:
+    def height(self) -> str:
         return (
-            f'{"-" if self.water_level_change.feet < 0 or self.water_level_change.inches < 0 else ""}'
-            f'{abs(self.water_level_change.feet)} ft '
-            f'{abs(self.water_level_change.inches):.1f} in'
+            f'{"" if self.water_level_change.above_mean else "-"}'
+            f'{self.water_level_change.feet} ft '
+            f'{self.water_level_change.inches} in'
         )

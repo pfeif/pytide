@@ -9,7 +9,7 @@ CACHE_EXPIRATION = '-3 hours'
 
 def get_cached_predictions(db_id: int, target_date: str) -> list[GetCachedPredictionsResponse]:
     query = f"""
-        SELECT t.time, tt.type, t.feet, t.inches
+        SELECT t.time, tt.type, t.above_mean, t.feet, t.inches
         FROM tide t
             JOIN tide_type tt ON tt.id = t.type_id
         WHERE t.station_id = ?
@@ -26,6 +26,7 @@ def get_cached_predictions(db_id: int, target_date: str) -> list[GetCachedPredic
             GetCachedPredictionsResponse(
                 row['time'],
                 row['type'],
+                row['above_mean'],
                 row['feet'],
                 row['inches'],
             )
@@ -35,9 +36,10 @@ def get_cached_predictions(db_id: int, target_date: str) -> list[GetCachedPredic
 
 def save_predictions(db_id: int, tides: list[Tide]) -> None:
     insert_command = """
-        INSERT INTO tide(station_id, time, type_id, feet, inches)
-        VALUES (?, ?, (SELECT id FROM tide_type WHERE type = ?), ?, ?)
+        INSERT INTO tide(station_id, time, type_id, above_mean, feet, inches)
+        VALUES (?, ?, (SELECT id FROM tide_type WHERE type = ?), ?, ?, ?)
         ON CONFLICT(station_id, time) DO UPDATE SET
+            above_mean=excluded.above_mean,
             feet=excluded.feet,
             inches=excluded.inches,
             last_updated=CURRENT_TIMESTAMP;
@@ -53,6 +55,7 @@ def save_predictions(db_id: int, tides: list[Tide]) -> None:
             db_id,
             tide.event_time.strftime('%Y-%m-%d %H:%M:%S'),
             tide.tide_type,
+            tide.water_level_change.above_mean,
             tide.water_level_change.feet,
             tide.water_level_change.inches,
         )

@@ -160,9 +160,9 @@
                                         <tbody>
                                           {% for tide in station.tides %}
                                           <tr>
-                                            <td class="text-center" style="line-height: 24px; font-size: 16px; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 4.8px;" align="center" valign="top">{{ tide.time_str }}</td>
+                                            <td class="text-center" style="line-height: 24px; font-size: 16px; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 4.8px;" align="center" valign="top">{{ tide.time }}</td>
                                             <td class="text-center" style="line-height: 24px; font-size: 16px; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 4.8px;" align="center" valign="top">{{ tide.tide_type }}</td>
-                                            <td class="text-center" style="line-height: 24px; font-size: 16px; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 4.8px;" align="center" valign="top">{{ tide.height_str }}</td>
+                                            <td class="text-center" style="line-height: 24px; font-size: 16px; border-top-width: 1px; border-top-color: #e2e8f0; border-top-style: solid; margin: 0; padding: 4.8px;" align="center" valign="top">{{ tide.height }}</td>
                                           </tr>
                                           {% endfor %}
                                         </tbody>
