@@ -48,7 +48,7 @@ def _create_cache(connection: sqlite3.Connection) -> None:
             "name"          TEXT,
             "latitude"      REAL,
             "longitude"     REAL,
-            "last_updated"  DATETIME DEFAULT CURRENT_TIMESTAMP
+            "last_updated"  TEXT DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE TABLE IF NOT EXISTS "tide_type" (
@@ -61,9 +61,10 @@ def _create_cache(connection: sqlite3.Connection) -> None:
             "station_id"    INTEGER NOT NULL,
             "time"          TEXT NOT NULL,
             "type_id"       INTEGER NOT NULL,
-            "feet"          INT NOT NULL,
+            "above_mean"    INTEGER NOT NULL,
+            "feet"          INTEGER NOT NULL,
             "inches"        REAL NOT NULL,
-            "last_updated"  DATETIME DEFAULT CURRENT_TIMESTAMP,
+            "last_updated"  TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY("station_id") REFERENCES "station"("id") ON DELETE CASCADE,
             FOREIGN KEY("type_id") REFERENCES "tide_type"("id"),
             UNIQUE("station_id", "time")
@@ -74,7 +75,7 @@ def _create_cache(connection: sqlite3.Connection) -> None:
             "station_id"    INTEGER NOT NULL UNIQUE,
             "image_bytes"   BLOB NOT NULL,
             "content_id"    TEXT NOT NULL,
-            "last_updated"  DATETIME DEFAULT CURRENT_TIMESTAMP,
+            "last_updated"  TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY("station_id") REFERENCES "station"("id") ON DELETE CASCADE
         );
 

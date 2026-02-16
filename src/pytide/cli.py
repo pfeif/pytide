@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 from platformdirs import user_config_dir
 
+from pytide.astronomy.service import hydrate_astronomical_data
 from pytide.database.cache import delete_cache
 from pytide.email import service
 from pytide.maps.service import hydrate_map_image
@@ -69,6 +70,7 @@ def main(
         hydrate_metadata(station)
         hydrate_predictions(station)
         hydrate_map_image(station, maps_api_key)
+        hydrate_astronomical_data(station)
 
     message: EmailMessage = service.create_message(stations, save_html, save_email)
 

@@ -22,5 +22,5 @@ def fetch_noaa_metadata() -> list[FetchNoaaMetadataResponse]:
             for station in stations
         ]
 
-    except requests.RequestException as error:
+    except Exception as error:
         raise SystemExit(f'Unable to retrieve station metadata -> {error}') from error

@@ -22,7 +22,7 @@ def cache_is_fresh() -> bool:
 
 def get_cached_metadata(noaa_id: str) -> GetCachedMetadataResponse | None:
     query = f"""
-        SELECT *
+        SELECT id, name, latitude, longitude
         FROM station
         WHERE noaa_id = ?
             AND last_updated >= datetime('now', '{CACHE_EXPIRATION}');
@@ -33,15 +33,14 @@ def get_cached_metadata(noaa_id: str) -> GetCachedMetadataResponse | None:
         cursor = connection.execute(query, (noaa_id,))
         row = cursor.fetchone()
 
-        return (
-            GetCachedMetadataResponse(
-                row['id'],
-                row['name'],
-                row['latitude'],
-                row['longitude'],
-            )
-            if row
-            else None
+        if not row:
+            return None
+
+        return GetCachedMetadataResponse(
+            row['id'],
+            row['name'],
+            row['latitude'],
+            row['longitude'],
         )
 
 
@@ -56,7 +55,15 @@ def save_metadata(requests: list[SaveMetadataRequest]) -> None:
             last_updated=CURRENT_TIMESTAMP
     """
 
-    data = [(request.noaa_id, request.name, request.latitude, request.longitude) for request in requests]
+    data = [
+        (
+            request.noaa_id,
+            request.name,
+            request.latitude,
+            request.longitude,
+        )
+        for request in requests
+    ]
 
     with get_connection() as connection:
         with connection:

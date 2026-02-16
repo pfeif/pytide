@@ -23,6 +23,14 @@ def hydrate_metadata(station: Station) -> None:
 def update_metadata_cache() -> None:
     metadata = fetch_noaa_metadata()
 
-    values = [SaveMetadataRequest(datum.noaa_id, datum.name, datum.latitude, datum.longitude) for datum in metadata]
+    values = [
+        SaveMetadataRequest(
+            datum.noaa_id,
+            datum.name,
+            datum.latitude,
+            datum.longitude,
+        )
+        for datum in metadata
+    ]
 
     save_metadata(values)
